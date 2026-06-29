@@ -1,5 +1,9 @@
 # Extension Questassure VHDL pour VS Code
 
+[![Marketplace](https://img.shields.io/badge/VS%20Code%20Marketplace-Questassure-blue?logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=DARIER--LEGRAND.questassure-vscode)
+
+L'extension officielle est disponible sur le [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=DARIER--LEGRAND.questassure-vscode).
+
 Cette extension intègre les outils de productivité VHDL de **Questassure** directement dans VS Code, offrant la coloration syntaxique, des diagnostics en temps réel, le formatage, des simulations, des schémas interactifs et un outil graphique de conception de FSM.
 
 ---

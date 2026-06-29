@@ -1,5 +1,9 @@
 # Questassure
 
+[![Marketplace](https://img.shields.io/badge/VS%20Code%20Marketplace-Questassure-blue?logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=DARIER--LEGRAND.questassure-vscode)
+
+L'extension officielle est disponible sur le [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=DARIER--LEGRAND.questassure-vscode).
+
 Questassure est une extension VS Code pour le développement et la simulation en VHDL-2008. Elle intègre des outils de productivité avancés s'appuyant sur des briques open source solides :
 
 * **GHDL** pour l'analyse syntaxique, la vérification des dépendances et la simulation.
