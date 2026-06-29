@@ -1,0 +1,19 @@
+# Ignorer le dossier d'exemples de simulation local
+examples/
+
+# Dépendances Node
+node_modules/
+
+# Dossiers de build / compilation
+dist/
+out/
+
+# Fichiers système OS
+.DS_Store
+Thumbs.db
+
+# Fichiers de test VS Code
+.vscode-test/
+
+# Paquets d'extension VS Code (.vsix)
+*.vsix

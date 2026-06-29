@@ -1,0 +1,170 @@
+{
+  "name": "questassure-vscode",
+  "displayName": "%displayName%",
+  "description": "%description%",
+  "version": "1.0.0",
+  "publisher": "DARIER--LEGRAND",
+  "license": "SEE LICENSE IN LICENSE",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Formatters"
+  ],
+  "activationEvents": [
+    "onLanguage:vhdl"
+  ],
+  "main": "./dist/extension.js",
+  "scripts": {
+    "vscode:prepublish": "npx esbuild extension.js --bundle --platform=node --minify --outfile=dist/extension.js --external:vscode"
+  },
+  "devDependencies": {
+    "esbuild": "^0.20.0"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "vhdl",
+        "aliases": ["VHDL", "vhdl"],
+        "extensions": [".vhd", ".vhdl"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "vhdl",
+        "scopeName": "source.vhdl",
+        "path": "./syntaxes/vhdl.tmLanguage.json"
+      }
+    ],
+    "configurationDefaults": {
+      "[vhdl]": {
+        "files.autoSave": "afterDelay",
+        "files.autoSaveDelay": 1000
+      }
+    },
+    "configuration": {
+      "title": "%configuration.title%",
+      "properties": {
+        "questassure.ghdlPath": {
+          "type": "string",
+          "default": "ghdl",
+          "description": "%config.ghdlPath.description%"
+        },
+        "questassure.stopTime": {
+          "type": "string",
+          "default": "1us",
+          "description": "%config.stopTime.description%"
+        },
+        "questassure.language": {
+          "type": "string",
+          "default": "auto",
+          "enum": ["auto", "en", "fr"],
+          "enumDescriptions": [
+            "%config.language.auto%",
+            "%config.language.en%",
+            "%config.language.fr%"
+          ],
+          "description": "%config.language.description%"
+        },
+        "questassure.openWavesOnTestExplorerRun": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.openWavesOnTestExplorerRun.description%"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "questassure.runTestbench",
+        "title": "%command.runTestbench%"
+      },
+      {
+        "command": "questassure.compileFile",
+        "title": "%command.compileFile%"
+      },
+      {
+        "command": "questassure.showRTL",
+        "title": "%command.showRTL%"
+      },
+      {
+        "command": "questassure.generateTestbench",
+        "title": "%command.generateTestbench%"
+      },
+      {
+        "command": "questassure.generateFsmTemplate",
+        "title": "%command.generateFsmTemplate%"
+      },
+      {
+        "command": "questassure.instantiateComponent",
+        "title": "%command.instantiateComponent%"
+      },
+      {
+        "command": "questassure.openFsmDesigner",
+        "title": "%command.openFsmDesigner%"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "resourceLangId == vhdl",
+          "command": "questassure.runTestbench",
+          "group": "1_modification"
+        },
+        {
+          "when": "resourceLangId == vhdl",
+          "command": "questassure.showRTL",
+          "group": "1_modification"
+        },
+        {
+          "when": "resourceLangId == vhdl",
+          "command": "questassure.generateTestbench",
+          "group": "2_generation"
+        },
+        {
+          "when": "resourceLangId == vhdl",
+          "command": "questassure.generateFsmTemplate",
+          "group": "2_generation"
+        },
+        {
+          "when": "resourceLangId == vhdl",
+          "command": "questassure.instantiateComponent",
+          "group": "2_generation"
+        },
+        {
+          "when": "resourceLangId == vhdl",
+          "command": "questassure.openFsmDesigner",
+          "group": "1_modification"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "questassure.runTestbench",
+          "when": "resourceLangId == vhdl"
+        },
+        {
+          "command": "questassure.showRTL",
+          "when": "resourceLangId == vhdl"
+        },
+        {
+          "command": "questassure.generateTestbench",
+          "when": "resourceLangId == vhdl"
+        },
+        {
+          "command": "questassure.generateFsmTemplate",
+          "when": "resourceLangId == vhdl"
+        },
+        {
+          "command": "questassure.instantiateComponent",
+          "when": "resourceLangId == vhdl"
+        },
+        {
+          "command": "questassure.openFsmDesigner",
+          "when": "resourceLangId == vhdl"
+        }
+      ]
+    }
+  }
+}

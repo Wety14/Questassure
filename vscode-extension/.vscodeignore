@@ -1,0 +1,9 @@
+.git
+.gitignore
+.vscode
+node_modules
+*.js
+!dist/extension.js
+yarn.lock
+package-lock.json
+*.vsix

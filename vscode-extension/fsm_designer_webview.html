@@ -1,0 +1,2240 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Questassure FSM Designer</title>
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --sidebar-bg: rgba(15, 23, 42, 0.65);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --text-color: #f1f5f9;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0ea5e9;
+      --success: #10b981;
+      --success-hover: #059669;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: var(--font-family);
+      user-select: none;
+      display: flex;
+    }
+
+    /* Sidebar Styling */
+    #sidebar {
+      width: 330px;
+      height: 100%;
+      background-color: var(--sidebar-bg);
+      backdrop-filter: blur(16px);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+      box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sidebar-header h2 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .sidebar-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .form-input {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-color);
+      padding: 8px 12px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus {
+      border-color: var(--primary);
+    }
+
+    /* Buttons */
+    .btn {
+      background-color: var(--primary);
+      color: #000;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background-color 0.2s, transform 0.1s;
+    }
+
+    .btn:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-success {
+      background-color: var(--success);
+      color: #fff;
+    }
+
+    .btn-success:hover {
+      background-color: var(--success-hover);
+    }
+
+    .btn-danger {
+      background-color: var(--danger);
+      color: #fff;
+    }
+
+    .btn-danger:hover {
+      background-color: var(--danger-hover);
+    }
+
+    .btn-secondary {
+      background-color: rgba(255, 255, 255, 0.08);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 11px;
+    }
+
+    /* Canvas Area */
+    #canvas-container {
+      flex: 1;
+      height: 100%;
+      position: relative;
+      background-color: #ffffff;
+      outline: none;
+    }
+
+    #canvas {
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+      background-color: #ffffff;
+    }
+
+    #canvas:active {
+      cursor: grabbing;
+    }
+
+    /* Node & Edge Styling */
+    .state-node {
+      cursor: pointer;
+    }
+
+    .state-node ellipse {
+      fill: #ffffff;
+      stroke: #000000;
+      stroke-width: 2px;
+      transition: stroke 0.2s, stroke-width 0.2s, fill 0.2s;
+    }
+
+    .state-node ellipse.initial-inner {
+      fill: none !important;
+      stroke-width: 1.5px;
+    }
+
+    .state-node:hover ellipse {
+      stroke: #2563eb;
+      stroke-width: 3px;
+    }
+
+    .state-node:hover ellipse.initial-inner {
+      stroke: #2563eb;
+      stroke-width: 2px;
+    }
+
+    .state-node.selected ellipse {
+      fill: #f8fafc;
+      stroke: #2563eb;
+      stroke-width: 3.5px;
+      filter: drop-shadow(0 0 8px rgba(37, 99, 235, 0.4));
+    }
+
+    .state-node.selected ellipse.initial-inner {
+      stroke: #2563eb;
+      stroke-width: 2.2px;
+      filter: none;
+    }
+
+    .state-node text {
+      fill: #000000;
+      font-size: 13px;
+      font-weight: 600;
+      text-anchor: middle;
+      pointer-events: none;
+    }
+
+    .state-node .state-outputs {
+      fill: #475569;
+      font-size: 10px;
+      font-weight: normal;
+    }
+
+    /* Edge line */
+    .transition-edge {
+      fill: none;
+      stroke: #000000;
+      stroke-width: 2px;
+      cursor: pointer;
+      transition: stroke 0.2s, stroke-width 0.2s;
+    }
+
+    .transition-edge:hover {
+      stroke: #2563eb;
+      stroke-width: 3px;
+    }
+
+    .transition-edge.selected {
+      stroke: #2563eb;
+      stroke-width: 3px;
+      filter: drop-shadow(0 0 5px rgba(37, 99, 235, 0.4));
+    }
+
+    .transition-label {
+      fill: #000000;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      text-anchor: middle;
+    }
+
+    .transition-label-bg {
+      fill: #ffffff;
+      stroke: #cbd5e1;
+      stroke-width: 1px;
+      rx: 4px;
+      cursor: pointer;
+    }
+
+    /* Connection line drag indicator */
+    .drag-line {
+      fill: none;
+      stroke: #2563eb;
+      stroke-width: 2px;
+      stroke-dasharray: 4 4;
+      pointer-events: none;
+    }
+
+    /* Connection Handle */
+    .connection-handle {
+      fill: #2563eb;
+      stroke: #ffffff;
+      stroke-width: 1.5px;
+      cursor: crosshair;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .state-node:hover .connection-handle {
+      opacity: 1;
+    }
+
+    /* Floating Toolbar */
+    #floating-toolbar {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      gap: 8px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      padding: 6px;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      z-index: 5;
+    }
+
+    /* Helper lists */
+    .signal-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 160px;
+      overflow-y: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 6px;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .signal-item {
+      font-size: 11px;
+      padding: 4px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.02);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .signal-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Outputs setup block */
+    .output-setting-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .output-setting-row input {
+      flex: 1;
+    }
+
+    /* Quick Instruction overlay */
+    #help-overlay {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+      max-width: 280px;
+      pointer-events: none;
+      line-height: 1.5;
+    }
+
+    #help-overlay h4 {
+      margin: 0 0 6px 0;
+      color: var(--primary);
+      font-size: 12px;
+    }
+
+    #help-overlay ul {
+      margin: 0;
+      padding-left: 16px;
+    }
+
+    /* Setup Modal Table Styling */
+    .setup-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+    }
+
+    .setup-table th {
+      text-align: left;
+      font-size: 11px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-color);
+      padding: 6px 4px;
+      font-weight: 600;
+    }
+
+    .setup-table td {
+      padding: 6px 4px;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Autocomplete Datalists -->
+  <datalist id="outputs-autocomplete-list"></datalist>
+  <datalist id="inputs-autocomplete-list"></datalist>
+
+  <!-- Setup Wizard Modal -->
+  <div id="setup-modal" style="position: absolute; inset: 0; background: rgba(11, 15, 25, 0.9); backdrop-filter: blur(15px); display: none; align-items: center; justify-content: center; z-index: 100;">
+    <div style="width: 580px; background: rgba(15, 23, 42, 0.95); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column;">
+      <h3 style="margin-top: 0; color: var(--primary); font-size: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Initialisation de la FSM</h3>
+      
+
+
+      <!-- Signals Table -->
+      <div class="section-title">Signaux d'Entrées/Sorties</div>
+      
+      <div style="max-height: 220px; overflow-y: auto; margin-bottom: 12px; border: 1px solid var(--border-color); border-radius: 6px; padding: 4px; background: rgba(0,0,0,0.2);">
+        <table class="setup-table">
+          <thead>
+            <tr>
+              <th>Nom du Signal</th>
+              <th style="width: 90px;">Sens</th>
+              <th style="width: 65px; text-align: center;">Bits</th>
+              <th>Valeur par défaut</th>
+              <th style="width: 30px;"></th>
+            </tr>
+          </thead>
+          <tbody id="setup-table-body">
+            <!-- Table rows populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; margin-bottom: 24px;">
+        <button class="btn btn-secondary btn-sm" id="btn-setup-add-row">+ Ajouter une ligne</button>
+        <span style="font-size: 10px; color: var(--text-muted); align-self: center;">[Tab] Suivant / Ligne suivante &nbsp;&bull;&nbsp; [Entrée] Ligne suivante</span>
+      </div>
+
+      <button class="btn btn-success" id="btn-setup-confirm" style="width: 100%; padding: 12px; font-size: 13px;">
+        Créer la FSM et ouvrir le canevas
+      </button>
+    </div>
+  </div>
+
+  <!-- Sidebar Config/Details -->
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <h2>FSM CONFIG</h2>
+      <button class="btn btn-success" id="btn-save" title="Ctrl+S">Enregistrer</button>
+    </div>
+
+    <div class="sidebar-content">
+      <!-- Section 1: Global FSM Config -->
+      <div id="section-global">
+
+        <div class="section-title" style="margin-top: 24px;">Gestion des signaux (I/O)</div>
+        <div style="display: flex; gap: 4px; margin-bottom: 10px;">
+          <input type="text" id="manage-sig-name" class="form-input" placeholder="Nom" style="flex: 2; padding: 6px 10px; font-size: 11px;">
+          <select id="manage-sig-dir" class="form-input" style="flex: 1.5; padding: 6px; font-size: 11px; background: rgba(0,0,0,0.25);">
+            <option value="in">In</option>
+            <option value="out">Out</option>
+          </select>
+          <input type="number" id="manage-sig-size" class="form-input" value="1" min="1" style="width: 36px; padding: 6px; font-size: 11px; text-align: center;">
+          <button class="btn btn-secondary btn-sm" id="btn-manage-add-sig" style="padding: 6px 10px;">+</button>
+        </div>
+        <div class="signal-list" id="vhdl-ports-list" style="max-height: 150px;">
+          <!-- Ports list -->
+        </div>
+
+        <div class="section-title" style="margin-top: 24px;">Sorties par défaut</div>
+        <div id="default-outputs-container">
+          <!-- Dynamically populated -->
+        </div>
+        <button class="btn btn-secondary btn-sm" id="btn-add-default-output" style="width: 100%; margin-top: 8px;">
+          + Ajouter une sortie
+        </button>
+      </div>
+
+      <!-- Section 2: Selected State Details -->
+      <div id="section-state" style="display: none;">
+        <div class="section-title">Détails de l'État</div>
+        <div class="form-group">
+          <label for="state-name-input">Nom de l'état</label>
+          <input type="text" id="state-name-input" class="form-input">
+        </div>
+
+        <div class="section-title" style="margin-top: 24px;">Affectations de sorties</div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
+          <thead>
+            <tr style="text-align: left; font-size: 10px; color: var(--text-muted); border-bottom: 1px solid var(--border-color);">
+              <th style="padding: 4px 0;">Sortie</th>
+              <th style="padding: 4px 0;">Valeur</th>
+              <th style="padding: 4px 0; width: 25px; text-align: center;"></th>
+            </tr>
+          </thead>
+          <tbody id="state-outputs-table-body">
+            <!-- Outputs assignments table -->
+          </tbody>
+        </table>
+        <button class="btn btn-secondary btn-sm" id="btn-add-state-output" style="width: 100%; margin-top: 8px;">
+          + Assigner une sortie
+        </button>
+
+        <div style="display: flex; gap: 8px; margin-top: 30px;">
+          <button class="btn btn-danger" id="btn-delete-state" style="flex: 1;">Supprimer l'état</button>
+          <button class="btn btn-secondary" id="btn-deselect-state">Retour</button>
+        </div>
+      </div>
+
+      <!-- Section 3: Selected Transition Details -->
+      <div id="section-transition" style="display: none;">
+        <div class="section-title">Détails de la Transition</div>
+        <div class="form-group">
+          <label>Source</label>
+          <input type="text" id="trans-source" class="form-input" readonly disabled>
+        </div>
+        <div class="form-group">
+          <label>Cible</label>
+          <input type="text" id="trans-target" class="form-input" readonly disabled>
+        </div>
+        <div class="form-group">
+          <label for="trans-cond">Condition (VHDL)</label>
+          <input type="text" id="trans-cond" class="form-input" placeholder="ex: start = '1'">
+          <span style="font-size: 10px; color: var(--text-muted);">
+            Laissez vide pour une transition inconditionnelle ("default").
+          </span>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 30px;">
+          <button class="btn btn-danger" id="btn-delete-trans" style="flex: 1;">Supprimer</button>
+          <button class="btn btn-secondary" id="btn-deselect-trans">Retour</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Graphic Canvas -->
+  <div id="canvas-container">
+    <div id="floating-toolbar">
+      <button class="btn btn-secondary" id="btn-add-state" title="Double-cliquez sur le canvas">+ État</button>
+      <button class="btn btn-secondary" id="btn-zoom-in" title="Zoom +">+</button>
+      <button class="btn btn-secondary" id="btn-zoom-out" title="Zoom -">-</button>
+      <button class="btn btn-secondary" id="btn-zoom-fit" title="Ajuster la vue">Fit</button>
+      <button class="btn btn-secondary" id="btn-export-svg" title="Exporter en SVG">Export SVG</button>
+    </div>
+
+    <svg id="canvas">
+      <!-- Grid Pattern -->
+      <defs>
+        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(0, 0, 0, 0.06)" stroke-width="1"/>
+        </pattern>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 1 2 L 9 5 L 1 8 L 3.5 5 z" fill="#000000" />
+        </marker>
+        <marker id="arrow-selected" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 1 2 L 9 5 L 1 8 L 3.5 5 z" fill="#2563eb" />
+        </marker>
+      </defs>
+
+      <!-- Background grid -->
+      <rect width="100%" height="100%" fill="url(#grid)" id="canvas-bg" />
+
+      <!-- Transformable content group -->
+      <g id="viewport-g">
+        <!-- Transitions group -->
+        <g id="edges-g"></g>
+
+        <!-- Dragging line -->
+        <path id="drag-line" class="drag-line" d="" style="display: none;" />
+
+        <!-- Nodes group -->
+        <g id="nodes-g"></g>
+      </g>
+    </svg>
+
+    <div id="help-overlay">
+      <h4>Raccourcis & Gestes</h4>
+      <ul>
+        <li>Double-clic canvas : Créer un état</li>
+        <li>Glisser-déposer : Déplacer un état</li>
+        <li>Shift + Drag : Relier deux états</li>
+        <li>Molette : Zoom avant / arrière</li>
+        <li>Suppr / Del : Supprimer l'élément sélectionné</li>
+        <li>Ctrl+S / Cmd+S : Enregistrer</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const vscode = acquireVsCodeApi();
+
+    // Data Structures
+    let fsmName = "state_t";
+    let fsmSignal = "state_reg";
+    let statesList = [];      // Array of state objects: { name, x, y, outputs }
+    let transitionsList = []; // Array of transition objects: { from, to, cond }
+    let defaultOutputs = {};  // Key/value of default outputs
+    let vhdlPorts = [];       // Array of VHDL port objects: { name, direction, typeName, size }
+    let editingPortName = null; // Port name currently being edited inline
+    let focusAfterRender = null; // Keeps track of element to focus after default outputs re-render
+
+    // Setup Wizard row count
+    let setupRowCount = 0;
+
+    // Canvas Transformation State
+    let zoom = 1.0;
+    let panX = 0;
+    let panY = 0;
+    let isPanning = false;
+    let startPanX = 0;
+    let startPanY = 0;
+
+    // Selection State
+    let selectedState = null;      // State object
+    let selectedTransition = null; // Transition object
+
+    // Dragging Connection State
+    let isDraggingConnection = false;
+    let connectionSourceNode = null; // State object
+
+    // Node Dragging State
+    let draggedNode = null; // State object
+    let dragStartX = 0;
+    let dragStartY = 0;
+
+    // DOM References
+    const canvas = document.getElementById('canvas');
+    const viewportG = document.getElementById('viewport-g');
+    const nodesG = document.getElementById('nodes-g');
+    const edgesG = document.getElementById('edges-g');
+    const dragLine = document.getElementById('drag-line');
+    const canvasBg = document.getElementById('canvas-bg');
+    const setupModal = document.getElementById('setup-modal');
+
+    // Init App
+    window.addEventListener('DOMContentLoaded', () => {
+      vscode.postMessage({ command: 'ready' });
+      setupEventListeners();
+    });
+
+    // Helper functions for VHDL types & default values
+    function getTypeName(size) {
+      if (size <= 1) return 'std_logic';
+      return `std_logic_vector(${size - 1} downto 0)`;
+    }
+
+    function getDefaultValueForSize(size) {
+      if (size <= 1) return '0';
+      return `(others => '0')`;
+    }
+
+    // Sort ports: inputs first, then outputs (alphabetically)
+    function sortPorts() {
+      vhdlPorts.sort((a, b) => {
+        if (a.direction !== b.direction) {
+          return a.direction === 'in' ? -1 : 1;
+        }
+        return a.name.localeCompare(b.name);
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    function cleanCondition(cond) {
+      if (!cond) return 'default';
+      let cleaned = cond.trim();
+      // Simplify signal = '1' or "1" to just signal
+      cleaned = cleaned.replace(/\b(\w+)\s*=\s*['"]1['"]/gi, '$1');
+      // Simplify signal = '0' or "0" to not signal
+      cleaned = cleaned.replace(/\b(\w+)\s*=\s*['"]0['"]/gi, 'not $1');
+      // Simplify not signal = '1' to not signal
+      cleaned = cleaned.replace(/not\s*\(?\s*(\w+)\s*=\s*['"]1['"]\s*\)?/gi, 'not $1');
+      // Simplify not signal = '0' to signal
+      cleaned = cleaned.replace(/not\s*\(?\s*(\w+)\s*=\s*['"]0['"]\s*\)?/gi, '$1');
+      return cleaned.trim();
+    }
+
+    // Reorganize setup table rows dynamically: inputs first, outputs second
+    function reorderSetupRows() {
+      const tbody = document.getElementById('setup-table-body');
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      
+      // Remember which element is currently focused
+      const activeEl = document.activeElement;
+      let activeRowId = null;
+      let activeFieldClass = null;
+      if (activeEl && activeEl.closest('tr')) {
+        activeRowId = activeEl.closest('tr').getAttribute('data-row-id');
+        if (activeEl.classList.contains('setup-name-input')) activeFieldClass = 'setup-name-input';
+        else if (activeEl.classList.contains('setup-dir-select')) activeFieldClass = 'setup-dir-select';
+        else if (activeEl.classList.contains('setup-size-input')) activeFieldClass = 'setup-size-input';
+        else if (activeEl.classList.contains('setup-default-input')) activeFieldClass = 'setup-default-input';
+      }
+
+      // Extract data from all rows
+      const rowData = rows.map(tr => {
+        const nameInput = tr.querySelector('.setup-name-input');
+        const dirSelect = tr.querySelector('.setup-dir-select');
+        const sizeInput = tr.querySelector('.setup-size-input');
+        const defaultInput = tr.querySelector('.setup-default-input');
+        return {
+          rowId: tr.getAttribute('data-row-id'),
+          name: nameInput.value,
+          direction: dirSelect.value,
+          size: sizeInput.value,
+          defaultVal: defaultInput.value,
+          disabled: defaultInput.disabled
+        };
+      });
+
+      // Sort: inputs first, outputs second
+      rowData.sort((a, b) => {
+        if (a.direction !== b.direction) {
+          return a.direction === 'in' ? -1 : 1;
+        }
+        return 0; // maintain relative order
+      });
+
+      // Rebuild tbody
+      tbody.innerHTML = "";
+      rowData.forEach(data => {
+        const tr = document.createElement('tr');
+        tr.setAttribute('data-row-id', data.rowId);
+        tr.id = `setup-row-${data.rowId}`;
+        tr.style.borderBottom = '1px solid rgba(255, 255, 255, 0.04)';
+        tr.innerHTML = `
+          <td style="padding: 6px 4px;">
+            <input type="text" class="form-input setup-name-input" placeholder="ex: btn_start" style="width: 90%; padding: 4px 8px; font-size: 12px;" data-row-id="${data.rowId}" value="${escapeHtml(data.name)}">
+          </td>
+          <td style="padding: 6px 4px;">
+            <select class="form-input setup-dir-select" style="width: 100%; padding: 4px; font-size: 12px; background: rgba(0,0,0,0.25);" data-row-id="${data.rowId}">
+              <option value="in" ${data.direction === 'in' ? 'selected' : ''}>Entrée</option>
+              <option value="out" ${data.direction === 'out' ? 'selected' : ''}>Sortie</option>
+            </select>
+          </td>
+          <td style="padding: 6px 4px;">
+            <input type="number" class="form-input setup-size-input" min="1" style="width: 80%; padding: 4px; font-size: 12px; text-align: center;" data-row-id="${data.rowId}" value="${escapeHtml(data.size)}">
+          </td>
+          <td style="padding: 6px 4px;">
+            <input type="text" class="form-input setup-default-input" placeholder="-" style="width: 90%; padding: 4px 8px; font-size: 12px;" ${data.disabled ? 'disabled' : ''} data-row-id="${data.rowId}" value="${escapeHtml(data.defaultVal)}">
+          </td>
+          <td style="padding: 6px 4px; text-align: center;">
+            <button class="btn btn-danger btn-sm btn-setup-del-row" style="padding: 2px 6px; font-size: 11px;" data-row-id="${data.rowId}">&times;</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+        bindSetupRowEvents(tr);
+      });
+
+      // Restore focus
+      if (activeRowId !== null && activeFieldClass !== null) {
+        const targetTr = tbody.querySelector(`tr[data-row-id="${activeRowId}"]`);
+        if (targetTr) {
+          const targetEl = targetTr.querySelector(`.${activeFieldClass}`);
+          if (targetEl) targetEl.focus();
+        }
+      }
+    }
+
+    function bindSetupRowEvents(tr) {
+      const nameInput = tr.querySelector('.setup-name-input');
+      const dirSelect = tr.querySelector('.setup-dir-select');
+      const sizeInput = tr.querySelector('.setup-size-input');
+      const defaultInput = tr.querySelector('.setup-default-input');
+      const delBtn = tr.querySelector('.btn-setup-del-row');
+
+      dirSelect.addEventListener('change', () => {
+        if (dirSelect.value === 'in') {
+          defaultInput.disabled = true;
+          defaultInput.value = "";
+          defaultInput.placeholder = "-";
+        } else {
+          defaultInput.disabled = false;
+          defaultInput.placeholder = "0";
+          defaultInput.value = getDefaultValueForSize(parseInt(sizeInput.value) || 1);
+        }
+        reorderSetupRows();
+      });
+
+      sizeInput.addEventListener('change', () => {
+        if (dirSelect.value === 'out') {
+          defaultInput.value = getDefaultValueForSize(parseInt(sizeInput.value) || 1);
+        }
+      });
+
+      delBtn.addEventListener('click', () => {
+        tr.remove();
+        reorderSetupRows();
+      });
+
+      tr.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          let nextTr = tr.nextElementSibling;
+          if (!nextTr) {
+            addSetupRow();
+            nextTr = tr.nextElementSibling;
+          }
+          if (nextTr) {
+            const nextNameInput = nextTr.querySelector('.setup-name-input');
+            if (nextNameInput) nextNameInput.focus();
+          }
+        } else if (e.key === 'Tab' && !e.shiftKey) {
+          const activeElement = document.activeElement;
+          const isLastInput = (dirSelect.value === 'in' && activeElement === sizeInput) || 
+                              (dirSelect.value === 'out' && activeElement === defaultInput);
+          if (isLastInput) {
+            e.preventDefault();
+            let nextTr = tr.nextElementSibling;
+            if (!nextTr) {
+              addSetupRow();
+              nextTr = tr.nextElementSibling;
+            }
+            if (nextTr) {
+              const nextNameInput = nextTr.querySelector('.setup-name-input');
+              if (nextNameInput) nextNameInput.focus();
+            }
+          }
+        }
+      });
+    }
+
+    // Handle messages from the extension
+    window.addEventListener('message', event => {
+      const message = event.data;
+      if (message.command === 'loadFsm') {
+        const rawFsm = message.fsm;
+        const rawDefaults = message.defaultOutputs || {};
+        const entityNameVal = message.entityName || "my_fsm";
+        
+        defaultOutputs = {};
+        for (const [k, v] of Object.entries(rawDefaults)) {
+          defaultOutputs[k.toLowerCase()] = v;
+        }
+
+        if (rawFsm) {
+          setupModal.style.display = 'none';
+          fsmName = rawFsm.name || entityNameVal;
+          fsmSignal = rawFsm.stateSignal || "state_reg";
+
+          statesList = [];
+          transitionsList = [];
+          vhdlPorts = message.ports || [];
+          sortPorts();
+
+          const centerX = window.innerWidth / 2 - 100;
+          const centerY = window.innerHeight / 2;
+          const radius = Math.min(220, window.innerHeight * 0.3);
+
+          const rawStates = rawFsm.states || [];
+          rawStates.forEach((stateName, idx) => {
+            const angle = (idx / rawStates.length) * 2 * Math.PI - Math.PI / 2;
+            const detail = rawFsm.stateDetails[stateName] || {};
+            
+            const outputs = {};
+            if (detail.outputs) {
+              for (const [k, v] of Object.entries(detail.outputs)) {
+                const cleanKey = k.split(' ')[0].trim();
+                outputs[cleanKey] = v;
+              }
+            }
+
+            statesList.push({
+              name: stateName,
+              x: centerX + radius * Math.cos(angle),
+              y: centerY + radius * Math.sin(angle),
+              outputs: outputs
+            });
+          });
+
+          rawStates.forEach(stateName => {
+            const detail = rawFsm.stateDetails[stateName] || {};
+            const trans = detail.transitions || [];
+            trans.forEach(t => {
+              transitionsList.push({
+                from: stateName,
+                to: t.to,
+                cond: t.cond || 'default'
+              });
+            });
+          });
+
+          renderPortsList();
+          renderDefaultOutputs();
+          renderFsm();
+          zoomToFit();
+        } else {
+          // Initialize setup table wizard for empty file
+          setupModal.style.display = 'flex';
+          fsmName = entityNameVal;
+          fsmSignal = "state_reg";
+
+          const tbody = document.getElementById('setup-table-body');
+          tbody.innerHTML = "";
+          setupRowCount = 0;
+
+          // Add first row automatically
+          addSetupRow();
+
+          statesList = [];
+          transitionsList = [];
+          vhdlPorts = [];
+          defaultOutputs = {};
+
+          renderPortsList();
+          renderDefaultOutputs();
+          renderFsm();
+        }
+      }
+    });
+
+    // Add row to setup wizard table with keyboard navigation and default inheritance
+    function addSetupRow() {
+      const tbody = document.getElementById('setup-table-body');
+      const rowId = setupRowCount++;
+      
+      const tr = document.createElement('tr');
+      tr.setAttribute('data-row-id', rowId);
+      tr.id = `setup-row-${rowId}`;
+      tr.style.borderBottom = '1px solid rgba(255, 255, 255, 0.04)';
+      
+      // Determine default direction (inheritance from previous row)
+      let defaultDir = 'in';
+      const rows = tbody.querySelectorAll('tr');
+      if (rows.length > 0) {
+        const lastRow = rows[rows.length - 1];
+        const lastDirSelect = lastRow.querySelector('.setup-dir-select');
+        if (lastDirSelect) {
+          defaultDir = lastDirSelect.value;
+        }
+      }
+
+      tr.innerHTML = `
+        <td style="padding: 6px 4px;">
+          <input type="text" class="form-input setup-name-input" placeholder="ex: btn_start" style="width: 90%; padding: 4px 8px; font-size: 12px;" data-row-id="${rowId}">
+        </td>
+        <td style="padding: 6px 4px;">
+          <select class="form-input setup-dir-select" style="width: 100%; padding: 4px; font-size: 12px; background: rgba(0,0,0,0.25);" data-row-id="${rowId}">
+            <option value="in" ${defaultDir === 'in' ? 'selected' : ''}>Entrée</option>
+            <option value="out" ${defaultDir === 'out' ? 'selected' : ''}>Sortie</option>
+          </select>
+        </td>
+        <td style="padding: 6px 4px;">
+          <input type="number" class="form-input setup-size-input" value="1" min="1" style="width: 80%; padding: 4px; font-size: 12px; text-align: center;" data-row-id="${rowId}">
+        </td>
+        <td style="padding: 6px 4px;">
+          <input type="text" class="form-input setup-default-input" value="" placeholder="-" style="width: 90%; padding: 4px 8px; font-size: 12px;" ${defaultDir === 'in' ? 'disabled' : ''} data-row-id="${rowId}">
+        </td>
+        <td style="padding: 6px 4px; text-align: center;">
+          <button class="btn btn-danger btn-sm btn-setup-del-row" style="padding: 2px 6px; font-size: 11px;" data-row-id="${rowId}">&times;</button>
+        </td>
+      `;
+
+      tbody.appendChild(tr);
+
+      const nameInput = tr.querySelector('.setup-name-input');
+      // Autofocus first input of newly added row
+      setTimeout(() => nameInput.focus(), 10);
+
+      bindSetupRowEvents(tr);
+
+      return tr;
+    }
+
+    function setupEventListeners() {
+      // Setup Wizard buttons
+      document.getElementById('btn-setup-add-row').addEventListener('click', addSetupRow);
+
+      document.getElementById('btn-setup-confirm').addEventListener('click', () => {
+
+        const tbody = document.getElementById('setup-table-body');
+        const rows = tbody.querySelectorAll('tr');
+        
+        vhdlPorts = [];
+        defaultOutputs = {};
+
+        rows.forEach(tr => {
+          const nameInput = tr.querySelector('.setup-name-input');
+          const dirSelect = tr.querySelector('.setup-dir-select');
+          const sizeInput = tr.querySelector('.setup-size-input');
+          const defaultInput = tr.querySelector('.setup-default-input');
+
+          const name = nameInput.value.trim().toLowerCase();
+          const direction = dirSelect.value;
+          const size = parseInt(sizeInput.value) || 1;
+
+          if (name) {
+            vhdlPorts.push({
+              name: name,
+              direction: direction,
+              typeName: getTypeName(size),
+              size: size
+            });
+
+            if (direction === 'out') {
+              const defVal = defaultInput.value.trim() || getDefaultValueForSize(size);
+              defaultOutputs[name] = defVal;
+            }
+          }
+        });
+
+        // Group and sort ports dynamically
+        sortPorts();
+
+        setupModal.style.display = 'none';
+        renderPortsList();
+        renderDefaultOutputs();
+
+        // Clear canvas
+        statesList = [];
+        transitionsList = [];
+        renderFsm();
+      });
+
+      // Pan and Canvas selection logic
+      canvasBg.addEventListener('mousedown', e => {
+        if (e.button === 0) { // Left click on background
+          deselectAll();
+          if (e.shiftKey) return; 
+          isPanning = true;
+          startPanX = e.clientX - panX;
+          startPanY = e.clientY - panY;
+        }
+      });
+
+      window.addEventListener('mousemove', e => {
+        if (isPanning) {
+          panX = e.clientX - startPanX;
+          panY = e.clientY - startPanY;
+          updateViewportTransform();
+        } else if (isDraggingConnection) {
+          const pt = getMousePosition(e);
+          const srcX = connectionSourceNode.x;
+          const srcY = connectionSourceNode.y;
+          dragLine.setAttribute('d', `M ${srcX} ${srcY} L ${pt.x} ${pt.y}`);
+        } else if (draggedNode) {
+          const pt = getMousePosition(e);
+          draggedNode.x = pt.x - dragStartX;
+          draggedNode.y = pt.y - dragStartY;
+          renderFsm();
+        }
+      });
+
+      window.addEventListener('mouseup', e => {
+        if (isPanning) {
+          isPanning = false;
+        }
+        if (isDraggingConnection) {
+          isDraggingConnection = false;
+          dragLine.style.display = 'none';
+          
+          const targetElement = document.elementFromPoint(e.clientX, e.clientY);
+          if (targetElement) {
+            const stateG = targetElement.closest('.state-node');
+            if (stateG) {
+              const targetStateName = stateG.getAttribute('data-name');
+              const targetState = statesList.find(s => s.name === targetStateName);
+              if (targetState && connectionSourceNode) {
+                transitionsList.push({
+                  from: connectionSourceNode.name,
+                  to: targetState.name,
+                  cond: 'default'
+                });
+                renderFsm();
+                selectTransition(transitionsList[transitionsList.length - 1]);
+              }
+            }
+          }
+        }
+        if (draggedNode) {
+          draggedNode = null;
+        }
+      });
+
+      // Double click to add state
+      canvas.addEventListener('dblclick', e => {
+        if (e.target === canvasBg || e.target === canvas) {
+          const pt = getMousePosition(e);
+          const stateName = getUniqueStateName();
+          statesList.push({
+            name: stateName,
+            x: pt.x,
+            y: pt.y,
+            outputs: {}
+          });
+          renderFsm();
+        }
+      });
+
+      // Zoom events
+      canvas.addEventListener('wheel', e => {
+        e.preventDefault();
+        const zoomFactor = 1.1;
+        const mousePoint = getMousePosition(e);
+        
+        let newZoom;
+        if (e.deltaY < 0) {
+          newZoom = zoom * zoomFactor;
+        } else {
+          newZoom = zoom / zoomFactor;
+        }
+        newZoom = Math.max(0.2, Math.min(newZoom, 4.0));
+
+        panX = mousePoint.x_screen - (mousePoint.x * newZoom);
+        panY = mousePoint.y_screen - (mousePoint.y * newZoom);
+        zoom = newZoom;
+
+        updateViewportTransform();
+      }, { passive: false });
+
+      // Add state button
+      document.getElementById('btn-add-state').addEventListener('click', () => {
+        const stateName = getUniqueStateName();
+        statesList.push({
+          name: stateName,
+          x: 400 - panX,
+          y: 300 - panY,
+          outputs: {}
+        });
+        renderFsm();
+      });
+
+      document.getElementById('btn-zoom-in').addEventListener('click', () => {
+        zoom = Math.min(4.0, zoom * 1.2);
+        updateViewportTransform();
+      });
+
+      document.getElementById('btn-zoom-out').addEventListener('click', () => {
+        zoom = Math.max(0.2, zoom / 1.2);
+        updateViewportTransform();
+      });
+
+      document.getElementById('btn-zoom-fit').addEventListener('click', zoomToFit);
+
+      document.getElementById('btn-export-svg').addEventListener('click', () => {
+        vscode.postMessage({
+          command: 'exportSvg',
+          transparentSvg: getSerializedSvg('transparent'),
+          whiteSvg: getSerializedSvg('white'),
+          darkSvg: getSerializedSvg('dark')
+        });
+      });
+
+
+
+      // Manage I/O Panel Add Signal
+      document.getElementById('btn-manage-add-sig').addEventListener('click', () => {
+        const nameInput = document.getElementById('manage-sig-name');
+        const dirSelect = document.getElementById('manage-sig-dir');
+        const sizeInput = document.getElementById('manage-sig-size');
+
+        const name = nameInput.value.trim().toLowerCase();
+        const direction = dirSelect.value;
+        const size = parseInt(sizeInput.value) || 1;
+
+        if (name && !vhdlPorts.some(p => p.name.toLowerCase() === name)) {
+          const typeName = getTypeName(size);
+          vhdlPorts.push({ name, direction, typeName, size });
+          if (direction === 'out') {
+            defaultOutputs[name] = getDefaultValueForSize(size);
+          }
+          nameInput.value = "";
+          sortPorts();
+          renderPortsList();
+          renderDefaultOutputs();
+          renderFsm();
+        }
+      });
+
+      // Default Outputs Setup
+      document.getElementById('btn-add-default-output').addEventListener('click', () => {
+        let defaultName = "out_sig";
+        const outPorts = vhdlPorts.filter(p => p.direction === 'out');
+        if (outPorts.length > 0) {
+          const unconfigured = outPorts.find(p => defaultOutputs[p.name.toLowerCase()] === undefined);
+          if (unconfigured) defaultName = unconfigured.name;
+        }
+        defaultOutputs[defaultName.toLowerCase()] = "0";
+        renderDefaultOutputs();
+      });
+
+      // State Details Panel Updates
+      document.getElementById('state-name-input').addEventListener('input', e => {
+        if (selectedState) {
+          const oldName = selectedState.name;
+          const newName = e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, '');
+          if (newName && newName !== oldName && !statesList.some(s => s.name === newName)) {
+            selectedState.name = newName;
+            transitionsList.forEach(t => {
+              if (t.from === oldName) t.from = newName;
+              if (t.to === oldName) t.to = newName;
+            });
+            renderFsm();
+          }
+        }
+      });
+
+      document.getElementById('btn-add-state-output').addEventListener('click', () => {
+        if (selectedState) {
+          let sigName = "out_sig";
+          const outPorts = vhdlPorts.filter(p => p.direction === 'out');
+          if (outPorts.length > 0) {
+            const unassigned = outPorts.find(p => selectedState.outputs[p.name.toLowerCase()] === undefined);
+            if (unassigned) sigName = unassigned.name;
+          }
+          selectedState.outputs[sigName.toLowerCase()] = "1";
+          renderStateOutputsList();
+          renderFsm();
+        }
+      });
+
+      document.getElementById('btn-delete-state').addEventListener('click', () => {
+        if (selectedState) {
+          const name = selectedState.name;
+          statesList = statesList.filter(s => s !== selectedState);
+          transitionsList = transitionsList.filter(t => t.from !== name && t.to !== name);
+          deselectAll();
+          renderFsm();
+        }
+      });
+
+      document.getElementById('btn-deselect-state').addEventListener('click', deselectAll);
+
+      // Transition Details Panel Updates
+      document.getElementById('trans-cond').addEventListener('input', e => {
+        if (selectedTransition) {
+          selectedTransition.cond = e.target.value || 'default';
+          renderFsm();
+        }
+      });
+
+      document.getElementById('btn-delete-trans').addEventListener('click', () => {
+        if (selectedTransition) {
+          transitionsList = transitionsList.filter(t => t !== selectedTransition);
+          deselectAll();
+          renderFsm();
+        }
+      });
+
+      document.getElementById('btn-deselect-trans').addEventListener('click', deselectAll);
+
+      // Save Command
+      document.getElementById('btn-save').addEventListener('click', saveFsmData);
+
+      // Hotkey listener
+      window.addEventListener('keydown', e => {
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+          if (document.activeElement.tagName !== 'INPUT') {
+            if (selectedState) {
+              const name = selectedState.name;
+              statesList = statesList.filter(s => s !== selectedState);
+              transitionsList = transitionsList.filter(t => t.from !== name && t.to !== name);
+              deselectAll();
+              renderFsm();
+            } else if (selectedTransition) {
+              transitionsList = transitionsList.filter(t => t !== selectedTransition);
+              deselectAll();
+              renderFsm();
+            }
+          }
+        } else if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+          e.preventDefault();
+          saveFsmData();
+        }
+      });
+    }
+
+    // Canvas coordinate translation helper
+    function getMousePosition(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x_screen = e.clientX - rect.left;
+      const y_screen = e.clientY - rect.top;
+      return {
+        x: (x_screen - panX) / zoom,
+        y: (y_screen - panY) / zoom,
+        x_screen,
+        y_screen
+      };
+    }
+
+    function updateViewportTransform() {
+      viewportG.setAttribute('transform', `translate(${panX}, ${panY}) scale(${zoom})`);
+    }
+
+    function runForceLayout() {
+      if (statesList.length <= 1) return;
+
+      // Parameters
+      const iterations = 200;
+      const k = 220; // Desired distance between nodes (increased for better readability)
+      const gravity = 0.02; // Reduced center gravity to let nodes spread out
+      
+      // Calculate dynamic size (rx, ry) for all states to make sure they are up-to-date
+      statesList.forEach(s => {
+        const name = s.name;
+        const outputs = s.outputs || {};
+        const outputLines = Object.keys(outputs).map(key => `${key} = ${outputs[key]}`);
+        const allLines = [name, ...outputLines];
+        const maxLen = Math.max(...allLines.map(line => line.length));
+        s.rx = Math.max(38, maxLen * 4.2 + 10);
+        s.ry = Math.max(30, allLines.length * 11 + 10);
+      });
+
+      // Find center of current nodes to drag them towards
+      let sumX = 0, sumY = 0;
+      statesList.forEach(s => {
+        sumX += s.x;
+        sumY += s.y;
+      });
+      const cx = sumX / statesList.length;
+      const cy = sumY / statesList.length;
+
+      // Displacements
+      const dxs = new Array(statesList.length).fill(0);
+      const dys = new Array(statesList.length).fill(0);
+
+      // Force iteration loop
+      for (let step = 0; step < iterations; step++) {
+        // Temperature/cooling factor
+        const temp = 22 * (1.0 - step / iterations);
+
+        // Reset displacements
+        dxs.fill(0);
+        dys.fill(0);
+
+        // 1. Repulsive forces between all pairs
+        for (let i = 0; i < statesList.length; i++) {
+          const s1 = statesList[i];
+          for (let j = i + 1; j < statesList.length; j++) {
+            const s2 = statesList[j];
+            const dx = s1.x - s2.x;
+            const dy = s1.y - s2.y;
+            const distSq = dx * dx + dy * dy || 0.01;
+            const dist = Math.sqrt(distSq);
+
+            // Calculate the minimum distance required to prevent ellipse overlaps
+            const angle = Math.atan2(dy, dx);
+            const r1 = Math.sqrt((s1.rx * Math.cos(angle))**2 + (s1.ry * Math.sin(angle))**2);
+            const r2 = Math.sqrt((s2.rx * Math.cos(angle))**2 + (s2.ry * Math.sin(angle))**2);
+            const minDist = r1 + r2 + 100; // Increased padding to 100px to avoid text overlap & give space for arrows
+
+            if (dist < minDist) {
+              const force = (minDist - dist) * 1.8; // Stronger push when overlapping
+              const fx = Math.cos(angle) * force;
+              const fy = Math.sin(angle) * force;
+              dxs[i] += fx;
+              dys[i] += fy;
+              dxs[j] -= fx;
+              dys[j] -= fy;
+            } else {
+              const force = (k * k) / distSq;
+              const fx = (dx / dist) * force * 0.45;
+              const fy = (dy / dist) * force * 0.45;
+              dxs[i] += fx;
+              dys[i] += fy;
+              dxs[j] -= fx;
+              dys[j] -= fy;
+            }
+          }
+        }
+
+        // 2. Attractive forces along transitions
+        transitionsList.forEach(t => {
+          const idxFrom = statesList.findIndex(s => s.name === t.from);
+          const idxTo = statesList.findIndex(s => s.name === t.to);
+          if (idxFrom === -1 || idxTo === -1 || idxFrom === idxTo) return;
+
+          const sFrom = statesList[idxFrom];
+          const sTo = statesList[idxTo];
+
+          const dx = sFrom.x - sTo.x;
+          const dy = sFrom.y - sTo.y;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
+
+          // Calculate minDist for these specific nodes to prevent pulling them into overlap
+          const angle = Math.atan2(dy, dx);
+          const r1 = Math.sqrt((sFrom.rx * Math.cos(angle))**2 + (sFrom.ry * Math.sin(angle))**2);
+          const r2 = Math.sqrt((sTo.rx * Math.cos(angle))**2 + (sTo.ry * Math.sin(angle))**2);
+          const minDist = r1 + r2 + 100;
+
+          // Only attract nodes if they are farther apart than the minimum required distance
+          if (dist > minDist) {
+            const force = ((dist - minDist) * (dist - minDist)) / k;
+            const fx = (dx / dist) * force * 0.35;
+            const fy = (dy / dist) * force * 0.35;
+
+            dxs[idxFrom] -= fx;
+            dys[idxFrom] -= fy;
+            dxs[idxTo] += fx;
+            dys[idxTo] += fy;
+          }
+        });
+
+        // 3. Gravity towards center
+        for (let i = 0; i < statesList.length; i++) {
+          const s = statesList[i];
+          dxs[i] -= (s.x - cx) * gravity;
+          dys[i] -= (s.y - cy) * gravity;
+        }
+
+        // 4. Update positions with temperature limiting
+        for (let i = 0; i < statesList.length; i++) {
+          const s = statesList[i];
+          const dx = dxs[i];
+          const dy = dys[i];
+          const dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
+          const limitedDist = Math.min(dist, temp);
+          
+          s.x += (dx / dist) * limitedDist;
+          s.y += (dy / dist) * limitedDist;
+        }
+      }
+    }
+
+    function getSerializedSvg(backgroundColor) {
+      const canvasEl = document.getElementById('canvas');
+      const svgClone = canvasEl.cloneNode(true);
+      
+      // Remove connection handles
+      svgClone.querySelectorAll('.connection-handle').forEach(el => el.remove());
+      
+      // Remove or color background pattern grid or background rect
+      const bgRect = svgClone.getElementById('canvas-bg');
+      if (bgRect) {
+        if (backgroundColor === 'transparent') {
+          bgRect.remove();
+        } else if (backgroundColor === 'white') {
+          bgRect.removeAttribute('fill');
+          bgRect.setAttribute('fill', '#ffffff');
+        } else {
+          bgRect.removeAttribute('fill');
+          bgRect.setAttribute('fill', '#0b0f19');
+        }
+      } else if (backgroundColor === 'white' || backgroundColor === 'dark') {
+        const fill = backgroundColor === 'white' ? '#ffffff' : '#0b0f19';
+        const newBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        newBg.setAttribute('width', '100%');
+        newBg.setAttribute('height', '100%');
+        newBg.setAttribute('fill', fill);
+        svgClone.insertBefore(newBg, svgClone.firstChild);
+      }
+
+      // Add stylesheet to SVG clone
+      const styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+      styleEl.textContent = `
+        :root {
+          --bg-color: #0b0f19;
+          --border-color: rgba(255, 255, 255, 0.08);
+          --text-color: ${backgroundColor === 'white' ? '#0f172a' : '#f1f5f9'};
+          --text-muted: ${backgroundColor === 'white' ? '#475569' : '#94a3b8'};
+          --primary: #38bdf8;
+          --font-family: system-ui, -apple-system, sans-serif;
+        }
+        
+        .state-node {
+          cursor: pointer;
+        }
+        .state-node ellipse {
+          fill: ${backgroundColor === 'white' ? '#f8fafc' : '#1e293b'};
+          stroke: ${backgroundColor === 'white' ? '#475569' : '#94a3b8'};
+          stroke-width: 2px;
+        }
+        .state-node ellipse.initial-inner {
+          fill: none !important;
+          stroke: ${backgroundColor === 'white' ? '#475569' : '#94a3b8'};
+          stroke-width: 1.5px;
+        }
+        .state-node text {
+          fill: var(--text-color);
+          font-size: 13px;
+          font-weight: 600;
+          text-anchor: middle;
+          font-family: var(--font-family);
+        }
+        .state-node .state-outputs {
+          fill: var(--text-muted);
+          font-size: 10px;
+          font-weight: normal;
+        }
+        .transition-edge {
+          fill: none;
+          stroke: ${backgroundColor === 'white' ? '#475569' : '#94a3b8'};
+          stroke-width: 2px;
+        }
+        .transition-label {
+          fill: var(--text-color);
+          font-size: 11px;
+          font-weight: 600;
+          text-anchor: middle;
+          font-family: var(--font-family);
+        }
+        .transition-label-bg {
+          fill: ${backgroundColor === 'white' ? '#ffffff' : '#0f172a'};
+          stroke: ${backgroundColor === 'white' ? '#cbd5e1' : 'rgba(255, 255, 255, 0.08)'};
+          stroke-width: 1px;
+          rx: 4px;
+        }
+      `;
+      svgClone.insertBefore(styleEl, svgClone.firstChild);
+      svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      return svgClone.outerHTML;
+    }
+
+    function zoomToFit() {
+      if (statesList.length === 0) return;
+
+      // Reorganize state positions using force-directed layout
+      runForceLayout();
+
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      statesList.forEach(s => {
+        if (s.x < minX) minX = s.x;
+        if (s.x > maxX) maxX = s.x;
+        if (s.y < minY) minY = s.y;
+        if (s.y > maxY) maxY = s.y;
+      });
+
+      const pad = 60;
+      const fsmW = (maxX - minX) || 100;
+      const fsmH = (maxY - minY) || 100;
+      const canvasW = canvas.clientWidth;
+      const canvasH = canvas.clientHeight;
+
+      const scaleX = canvasW / (fsmW + pad * 2);
+      const scaleY = canvasH / (fsmH + pad * 2);
+      zoom = Math.max(0.4, Math.min(scaleX, scaleY, 1.5));
+
+      panX = (canvasW - (minX + maxX) * zoom) / 2;
+      panY = (canvasH - (minY + maxY) * zoom) / 2;
+
+      updateViewportTransform();
+      renderFsm();
+    }
+
+    function getUniqueStateName() {
+      let idx = 1;
+      while (statesList.some(s => s.name === `STATE_${idx}`)) {
+        idx++;
+      }
+      return `STATE_${idx}`;
+    }
+
+    // Save Data
+    function saveFsmData() {
+      vscode.postMessage({
+        command: 'saveFsm',
+        fsmName: fsmName,
+        states: statesList.map(s => ({
+          name: s.name,
+          outputs: s.outputs
+        })),
+        transitions: transitionsList.map(t => ({
+          from: t.from,
+          to: t.to,
+          cond: t.cond === 'default' ? '' : t.cond
+        })),
+        defaultOutputs: defaultOutputs,
+        ports: vhdlPorts
+      });
+    }
+
+    // Selection helper
+    function selectState(state) {
+      deselectAll();
+      selectedState = state;
+      document.getElementById('section-global').style.display = 'none';
+      document.getElementById('section-transition').style.display = 'none';
+      document.getElementById('section-state').style.display = 'block';
+
+      document.getElementById('state-name-input').value = state.name;
+      renderStateOutputsList();
+
+      renderFsm();
+    }
+
+    function selectTransition(trans) {
+      deselectAll();
+      selectedTransition = trans;
+      document.getElementById('section-global').style.display = 'none';
+      document.getElementById('section-state').style.display = 'none';
+      document.getElementById('section-transition').style.display = 'block';
+
+      document.getElementById('trans-source').value = trans.from;
+      document.getElementById('trans-target').value = trans.to;
+      document.getElementById('trans-cond').value = trans.cond === 'default' ? '' : trans.cond;
+
+      renderFsm();
+    }
+
+    function deselectAll() {
+      selectedState = null;
+      selectedTransition = null;
+      document.getElementById('section-state').style.display = 'none';
+      document.getElementById('section-transition').style.display = 'none';
+      document.getElementById('section-global').style.display = 'block';
+      renderFsm();
+    }
+
+    // Remove Signal from FSM
+    function removeSignal(name) {
+      const lowerName = name.toLowerCase();
+      vhdlPorts = vhdlPorts.filter(p => p.name.toLowerCase() !== lowerName);
+      delete defaultOutputs[lowerName];
+      statesList.forEach(s => {
+        delete s.outputs[lowerName];
+      });
+      renderPortsList();
+      renderDefaultOutputs();
+      if (selectedState) {
+        renderStateOutputsList();
+      }
+      renderFsm();
+    }
+
+    // Rebuild Datalists for autocompletion
+    function rebuildAutocompletes() {
+      // Rebuild outputs autocomplete list
+      const outList = document.getElementById('outputs-autocomplete-list');
+      outList.innerHTML = "";
+      vhdlPorts.filter(p => p.direction === 'out').forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.name;
+        outList.appendChild(opt);
+      });
+
+      // Rebuild inputs autocomplete list
+      const inList = document.getElementById('inputs-autocomplete-list');
+      inList.innerHTML = "";
+      
+      // Standard values
+      ['\'0\'', '\'1\'', `(others => '0')`, `(others => '1')`].forEach(val => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        inList.appendChild(opt);
+      });
+      
+      // Input ports
+      vhdlPorts.filter(p => p.direction === 'in').forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.name;
+        inList.appendChild(opt);
+      });
+    }
+
+    // Renders ports list in global panel
+    function renderPortsList() {
+      const container = document.getElementById('vhdl-ports-list');
+      container.innerHTML = "";
+      if (vhdlPorts.length === 0) {
+        container.innerHTML = `<span style="font-size:11px;color:var(--text-muted);">Aucun signal configuré</span>`;
+        return;
+      }
+      vhdlPorts.forEach(port => {
+        const item = document.createElement('div');
+        item.className = "signal-item";
+        item.style.display = "flex";
+        item.style.justifyContent = "space-between";
+        item.style.alignItems = "center";
+        item.style.gap = "4px";
+        item.style.width = "100%";
+        item.style.boxSizing = "border-box";
+        
+        if (editingPortName === port.name) {
+          // Compact padding for editing mode
+          item.style.padding = "2px 4px";
+          
+          // Inline edit controls
+          const inputName = document.createElement('input');
+          inputName.type = 'text';
+          inputName.className = 'form-input';
+          inputName.style.flex = '1.8';
+          inputName.style.minWidth = '50px';
+          inputName.style.padding = '4px 6px';
+          inputName.style.fontSize = '11px';
+          inputName.value = port.name;
+          
+          const selectDir = document.createElement('select');
+          selectDir.className = 'form-input';
+          selectDir.style.width = '55px';
+          selectDir.style.padding = '4px';
+          selectDir.style.fontSize = '11px';
+          selectDir.style.background = 'rgba(0,0,0,0.25)';
+          selectDir.innerHTML = `
+            <option value="in"${port.direction === 'in' ? ' selected' : ''}>In</option>
+            <option value="out"${port.direction === 'out' ? ' selected' : ''}>Out</option>
+          `;
+          
+          const inputSize = document.createElement('input');
+          inputSize.type = 'number';
+          inputSize.className = 'form-input';
+          inputSize.min = '1';
+          inputSize.style.width = '36px';
+          inputSize.style.padding = '4px';
+          inputSize.style.fontSize = '11px';
+          inputSize.style.textAlign = 'center';
+          inputSize.value = port.size || 1;
+          
+          const btnSave = document.createElement('button');
+          btnSave.className = 'btn btn-success btn-sm';
+          btnSave.innerHTML = '✓';
+          btnSave.style.padding = '2px 4px';
+          btnSave.style.fontSize = '10px';
+          btnSave.style.minWidth = '20px';
+          btnSave.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const newName = inputName.value.trim().toLowerCase();
+            const newDir = selectDir.value;
+            const newSize = parseInt(inputSize.value) || 1;
+            
+            if (!newName) {
+              alert("Le nom du signal ne peut pas être vide.");
+              return;
+            }
+            if (newName !== port.name.toLowerCase() && vhdlPorts.some(p => p.name.toLowerCase() === newName)) {
+              alert("Ce nom de signal existe déjà.");
+              return;
+            }
+            
+            const oldName = port.name;
+            const oldDir = port.direction;
+            
+            // Update port values
+            port.name = newName;
+            port.direction = newDir;
+            port.size = newSize;
+            port.typeName = getTypeName(newSize);
+            
+            const oldLower = oldName.toLowerCase();
+            const newLower = newName.toLowerCase();
+
+            // If name changed, rename keys in defaultOutputs and states' outputs
+            if (oldLower !== newLower) {
+              if (defaultOutputs[oldLower] !== undefined) {
+                defaultOutputs[newLower] = defaultOutputs[oldLower];
+                delete defaultOutputs[oldLower];
+              }
+              
+              statesList.forEach(state => {
+                if (state.outputs && state.outputs[oldLower] !== undefined) {
+                  state.outputs[newLower] = state.outputs[oldLower];
+                  delete state.outputs[oldLower];
+                }
+              });
+            }
+            
+            // If direction changed to 'in', remove from defaultOutputs and state outputs
+            if (newDir === 'in') {
+              delete defaultOutputs[newLower];
+              statesList.forEach(state => {
+                if (state.outputs) {
+                  delete state.outputs[newLower];
+                }
+              });
+            }
+            
+            editingPortName = null;
+            sortPorts();
+            renderPortsList();
+            renderDefaultOutputs();
+            if (selectedState) {
+              renderStateOutputsList();
+            }
+            renderFsm();
+            rebuildAutocompletes();
+          });
+          
+          const btnCancel = document.createElement('button');
+          btnCancel.className = 'btn btn-secondary btn-sm';
+          btnCancel.innerHTML = '✗';
+          btnCancel.style.padding = '2px 4px';
+          btnCancel.style.fontSize = '10px';
+          btnCancel.style.minWidth = '20px';
+          btnCancel.addEventListener('click', (e) => {
+            e.stopPropagation();
+            editingPortName = null;
+            renderPortsList();
+          });
+          
+          item.appendChild(inputName);
+          item.appendChild(selectDir);
+          item.appendChild(inputSize);
+          item.appendChild(btnSave);
+          item.appendChild(btnCancel);
+        } else {
+          // Standard display
+          const info = document.createElement('span');
+          info.innerHTML = `<strong>${port.name}</strong> <span style="color:var(--text-muted); font-size: 9px;">(${port.direction} ${port.typeName})</span>`;
+          info.style.cursor = "pointer";
+          info.style.flex = "1";
+          info.style.overflow = "hidden";
+          info.style.textOverflow = "ellipsis";
+          info.style.whiteSpace = "nowrap";
+          info.title = "Cliquez pour modifier ce signal";
+          info.addEventListener('click', (e) => {
+            e.stopPropagation();
+            editingPortName = port.name;
+            renderPortsList();
+          });
+          
+          const btnDel = document.createElement('button');
+          btnDel.className = "btn btn-danger btn-sm";
+          btnDel.innerHTML = "&times;";
+          btnDel.style.padding = "2px 6px";
+          btnDel.style.fontSize = "10px";
+          btnDel.addEventListener('click', (e) => {
+            e.stopPropagation();
+            removeSignal(port.name);
+          });
+          
+          item.appendChild(info);
+          item.appendChild(btnDel);
+        }
+        container.appendChild(item);
+      });
+    }
+
+    // Renders Default Outputs checklist / inputs
+    function renderDefaultOutputs() {
+      const container = document.getElementById('default-outputs-container');
+      container.innerHTML = "";
+
+      const keys = Object.keys(defaultOutputs);
+      if (keys.length === 0) {
+        container.innerHTML = `<div style="font-size:11px;color:var(--text-muted);font-style:italic;">Aucune sortie configurée</div>`;
+        return;
+      }
+
+      keys.forEach((k, idx) => {
+        const val = defaultOutputs[k];
+        const row = document.createElement('div');
+        row.className = "output-setting-row";
+        
+        const inputName = document.createElement('input');
+        inputName.type = "text";
+        inputName.className = "form-input default-output-name-input";
+        inputName.value = k;
+        inputName.style.flex = "2";
+        inputName.addEventListener('change', e => {
+          const newName = e.target.value.toLowerCase().trim();
+          if (newName && newName !== k) {
+            defaultOutputs[newName] = val;
+            delete defaultOutputs[k];
+            renderDefaultOutputs();
+          }
+        });
+        inputName.addEventListener('keydown', e => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const allInputs = Array.from(container.querySelectorAll('.default-output-name-input'));
+            const currentIdx = allInputs.indexOf(inputName);
+            if (currentIdx !== -1 && currentIdx < allInputs.length - 1) {
+              focusAfterRender = { index: currentIdx + 1, field: 'name' };
+            }
+            const newName = inputName.value.toLowerCase().trim();
+            if (newName && newName !== k) {
+              defaultOutputs[newName] = val;
+              delete defaultOutputs[k];
+            }
+            renderDefaultOutputs();
+          }
+        });
+
+        const inputValue = document.createElement('input');
+        inputValue.type = "text";
+        inputValue.className = "form-input default-output-value-input";
+        inputValue.value = val;
+        inputValue.style.flex = "1.5";
+        inputValue.style.textAlign = "center";
+        inputValue.addEventListener('input', e => {
+          defaultOutputs[k] = e.target.value;
+        });
+        inputValue.addEventListener('keydown', e => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const allInputs = Array.from(container.querySelectorAll('.default-output-value-input'));
+            const currentIdx = allInputs.indexOf(inputValue);
+            if (currentIdx !== -1 && currentIdx < allInputs.length - 1) {
+              focusAfterRender = { index: currentIdx + 1, field: 'value' };
+            }
+            defaultOutputs[k] = inputValue.value;
+            renderDefaultOutputs();
+          }
+        });
+
+        const btnRemove = document.createElement('button');
+        btnRemove.className = "btn btn-danger btn-sm";
+        btnRemove.innerHTML = "&times;";
+        btnRemove.style.padding = "4px 8px";
+        btnRemove.addEventListener('click', () => {
+          delete defaultOutputs[k];
+          renderDefaultOutputs();
+        });
+
+        row.appendChild(inputName);
+        row.appendChild(inputValue);
+        row.appendChild(btnRemove);
+        container.appendChild(row);
+      });
+
+      // Handle restoring focus to the next cell
+      if (focusAfterRender) {
+        const fieldClass = focusAfterRender.field === 'name' ? '.default-output-name-input' : '.default-output-value-input';
+        const allInputs = container.querySelectorAll(fieldClass);
+        if (allInputs[focusAfterRender.index]) {
+          setTimeout(() => {
+            allInputs[focusAfterRender.index].focus();
+            allInputs[focusAfterRender.index].select();
+          }, 10);
+        }
+        focusAfterRender = null;
+      }
+    }
+
+    // Renders outputs for currently selected state inside a table with datalist autocompletion
+    function renderStateOutputsList() {
+      const container = document.getElementById('state-outputs-table-body');
+      container.innerHTML = "";
+      if (!selectedState) return;
+
+      const keys = Object.keys(selectedState.outputs);
+      if (keys.length === 0) {
+        container.innerHTML = `<tr><td colspan="3" style="font-size:11px;color:var(--text-muted);font-style:italic;padding:8px 0;text-align:center;">Les sorties utilisent leurs valeurs par défaut.</td></tr>`;
+        return;
+      }
+
+      rebuildAutocompletes();
+
+      keys.forEach(k => {
+        const val = selectedState.outputs[k];
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid rgba(255,255,255,0.02)';
+        
+        tr.innerHTML = `
+          <td style="padding: 4px 0;">
+            <input type="text" class="form-input state-out-name-input" value="${k}" list="outputs-autocomplete-list" style="width: 90%; padding: 4px 6px; font-size: 11px;">
+          </td>
+          <td style="padding: 4px 0;">
+            <input type="text" class="form-input state-out-val-input" value="${val}" list="inputs-autocomplete-list" style="width: 90%; padding: 4px 6px; font-size: 11px;">
+          </td>
+          <td style="padding: 4px 0; text-align: center;">
+            <button class="btn btn-danger btn-sm btn-state-out-del" style="padding: 2px 6px; font-size: 10px;">&times;</button>
+          </td>
+        `;
+
+        const nameInput = tr.querySelector('.state-out-name-input');
+        const valInput = tr.querySelector('.state-out-val-input');
+        const delBtn = tr.querySelector('.btn-state-out-del');
+
+        nameInput.addEventListener('change', e => {
+          const newName = e.target.value.toLowerCase().trim();
+          if (newName && newName !== k) {
+            selectedState.outputs[newName] = val;
+            delete selectedState.outputs[k];
+            renderStateOutputsList();
+            renderFsm();
+          }
+        });
+
+        valInput.addEventListener('input', e => {
+          selectedState.outputs[k] = e.target.value;
+          renderFsm();
+        });
+
+        delBtn.addEventListener('click', () => {
+          delete selectedState.outputs[k];
+          renderStateOutputsList();
+          renderFsm();
+        });
+
+        container.appendChild(tr);
+      });
+    }
+
+    // Rendering logic for nodes and edges
+    function renderFsm() {
+      nodesG.innerHTML = "";
+      edgesG.innerHTML = "";
+
+      // Compute dynamic sizes (rx, ry) for all states first based on state name and outputs
+      statesList.forEach(s => {
+        const name = s.name;
+        const outputs = s.outputs || {};
+        const outputLines = Object.keys(outputs).map(k => `${k} = ${outputs[k]}`);
+        const allLines = [name, ...outputLines];
+        const maxLen = Math.max(...allLines.map(line => line.length));
+        
+        s.rx = Math.max(38, maxLen * 4.2 + 10);
+        s.ry = Math.max(30, allLines.length * 11 + 10);
+      });
+
+      // 1. Render Edges (Transitions)
+      transitionsList.forEach(t => {
+        const fromNode = statesList.find(s => s.name === t.from);
+        const toNode = statesList.find(s => s.name === t.to);
+        if (!fromNode || !toNode) return;
+
+        const isSelected = (selectedTransition === t);
+
+        const edgeEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        edgeEl.setAttribute('class', `transition-edge ${isSelected ? 'selected' : ''}`);
+        edgeEl.setAttribute('marker-end', isSelected ? 'url(#arrow-selected)' : 'url(#arrow)');
+
+        let pathD = "";
+        let midX = 0, midY = 0;
+
+        if (fromNode === toNode) {
+          // Self loop
+          const x = fromNode.x;
+          const y = fromNode.y;
+          const startAng = -Math.PI / 4; // -45 deg
+          const endAng = -3 * Math.PI / 4; // -135 deg
+          const sx = x + fromNode.rx * Math.cos(startAng);
+          const sy = y + fromNode.ry * Math.sin(startAng);
+          const ex = x + fromNode.rx * Math.cos(endAng);
+          const ey = y + fromNode.ry * Math.sin(endAng);
+          
+          const cx1 = sx + 30;
+          const cy1 = sy - 45;
+          const cx2 = ex - 30;
+          const cy2 = ey - 45;
+
+          pathD = `M ${sx} ${sy} C ${cx1} ${cy1} ${cx2} ${cy2} ${ex} ${ey}`;
+          midX = x;
+          midY = y - fromNode.ry - 35;
+        } else {
+          // Normal edge
+          const dx = toNode.x - fromNode.x;
+          const dy = toNode.y - fromNode.y;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d === 0) return;
+
+          const ux = dx / d;
+          const uy = dy / d;
+          
+          const px = -uy;
+          const py = ux;
+
+          const isBidi = transitionsList.some(other => other.from === toNode.name && other.to === fromNode.name);
+          const offset = isBidi ? 25 : 10;
+
+          let cx = (fromNode.x + toNode.x) / 2 + px * offset;
+          let cy = (fromNode.y + toNode.y) / 2 + py * offset;
+
+          const alpha = Math.atan2(cy - fromNode.y, cx - fromNode.x);
+          const sx = fromNode.x + fromNode.rx * Math.cos(alpha);
+          const sy = fromNode.y + fromNode.ry * Math.sin(alpha);
+
+          const beta = Math.atan2(cy - toNode.y, cx - toNode.x);
+          const tx = toNode.x + toNode.rx * Math.cos(beta);
+          const ty = toNode.y + toNode.ry * Math.sin(beta);
+
+          pathD = `M ${sx} ${sy} Q ${cx} ${cy} ${tx} ${ty}`;
+          
+          midX = 0.25 * sx + 0.5 * cx + 0.25 * tx;
+          midY = 0.25 * sy + 0.5 * cy + 0.25 * ty;
+          midX += px * 10;
+          midY += py * 10;
+        }
+
+        edgeEl.setAttribute('d', pathD);
+        edgeEl.addEventListener('click', e => {
+          e.stopPropagation();
+          selectTransition(t);
+        });
+        edgeEl.addEventListener('dblclick', e => {
+          e.stopPropagation();
+          selectTransition(t);
+          vscode.postMessage({
+            command: 'selectTransition',
+            from: t.from,
+            to: t.to,
+            cond: t.cond
+          });
+        });
+        edgesG.appendChild(edgeEl);
+
+        // Transition Label
+        if (t.cond && t.cond !== 'default') {
+          const cleanedCond = cleanCondition(t.cond);
+          const labelGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          const labelLen = cleanedCond.length * 6.5 + 8;
+          
+          const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          rect.setAttribute('class', 'transition-label-bg');
+          rect.setAttribute('x', midX - labelLen / 2);
+          rect.setAttribute('y', midY - 8);
+          rect.setAttribute('width', labelLen);
+          rect.setAttribute('height', 16);
+          
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('class', 'transition-label');
+          text.setAttribute('x', midX);
+          text.setAttribute('y', midY + 3.5);
+          text.textContent = cleanedCond;
+
+          labelGroup.appendChild(rect);
+          labelGroup.appendChild(text);
+          labelGroup.addEventListener('click', e => {
+            e.stopPropagation();
+            selectTransition(t);
+          });
+          labelGroup.addEventListener('dblclick', e => {
+            e.stopPropagation();
+            selectTransition(t);
+            vscode.postMessage({
+              command: 'selectTransition',
+              from: t.from,
+              to: t.to,
+              cond: t.cond
+            });
+          });
+
+          edgesG.appendChild(labelGroup);
+        }
+      });
+
+      // 2. Render Nodes
+      statesList.forEach((s, idx) => {
+        const isSelected = (selectedState === s);
+
+        const nodeG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        nodeG.setAttribute('class', `state-node ${isSelected ? 'selected' : ''}`);
+        nodeG.setAttribute('transform', `translate(${s.x}, ${s.y})`);
+        nodeG.setAttribute('data-name', s.name);
+
+        const ellipse = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+        ellipse.setAttribute('cx', 0);
+        ellipse.setAttribute('cy', 0);
+        ellipse.setAttribute('rx', s.rx);
+        ellipse.setAttribute('ry', s.ry);
+        nodeG.appendChild(ellipse);
+
+        const isInitial = (idx === 0);
+        if (isInitial) {
+          const innerEllipse = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+          innerEllipse.setAttribute('class', 'initial-inner');
+          innerEllipse.setAttribute('cx', 0);
+          innerEllipse.setAttribute('cy', 0);
+          innerEllipse.setAttribute('rx', s.rx - 4);
+          innerEllipse.setAttribute('ry', s.ry - 4);
+          innerEllipse.setAttribute('pointer-events', 'none');
+          nodeG.appendChild(innerEllipse);
+        }
+
+        // Calculate text lines layout
+        const outputKeys = Object.keys(s.outputs || {});
+        const outputLines = outputKeys.map(k => `${k} = ${s.outputs[k]}`);
+        const allLines = [s.name, ...outputLines];
+        
+        // Centered layout for state name and outputs
+        const startY = allLines.length > 1 ? -Math.round((10 + outputLines.length * 14) / 2) + 3 : 4;
+
+        // State Name (First line)
+        const nameText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        nameText.setAttribute('x', 0);
+        nameText.setAttribute('y', startY);
+        nameText.textContent = s.name;
+        nodeG.appendChild(nameText);
+
+        // Separator line and Output lines
+        if (outputLines.length > 0) {
+          const sepY = startY + 8;
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', -s.rx * 0.75);
+          line.setAttribute('y1', sepY);
+          line.setAttribute('x2', s.rx * 0.75);
+          line.setAttribute('y2', sepY);
+          line.setAttribute('stroke', 'rgba(255, 255, 255, 0.15)');
+          line.setAttribute('stroke-width', '1');
+          nodeG.appendChild(line);
+
+          for (let j = 0; j < outputLines.length; j++) {
+            const outsText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            outsText.setAttribute('class', 'state-outputs');
+            outsText.setAttribute('x', 0);
+            outsText.setAttribute('y', sepY + 14 + j * 12);
+            outsText.textContent = outputLines[j];
+            nodeG.appendChild(outsText);
+          }
+        }
+
+        // Connection Handle
+        const handle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        handle.setAttribute('class', 'connection-handle');
+        handle.setAttribute('cx', s.rx);
+        handle.setAttribute('cy', 0);
+        handle.setAttribute('r', 5);
+        
+        handle.addEventListener('mousedown', e => {
+          e.stopPropagation();
+          isDraggingConnection = true;
+          connectionSourceNode = s;
+          dragLine.style.display = 'block';
+          const pt = getMousePosition(e);
+          dragLine.setAttribute('d', `M ${s.x} ${s.y} L ${pt.x} ${pt.y}`);
+        });
+        nodeG.appendChild(handle);
+
+        ellipse.addEventListener('mousedown', e => {
+          e.stopPropagation();
+          if (e.shiftKey) {
+            isDraggingConnection = true;
+            connectionSourceNode = s;
+            dragLine.style.display = 'block';
+            const pt = getMousePosition(e);
+            dragLine.setAttribute('d', `M ${s.x} ${s.y} L ${pt.x} ${pt.y}`);
+          } else {
+            draggedNode = s;
+            const pt = getMousePosition(e);
+            dragStartX = pt.x - s.x;
+            dragStartY = pt.y - s.y;
+            selectState(s);
+          }
+        });
+
+        // Double click to open state edit panel directly
+        ellipse.addEventListener('dblclick', e => {
+          e.stopPropagation();
+          selectState(s);
+          vscode.postMessage({
+            command: 'selectState',
+            state: s.name
+          });
+        });
+
+        nodesG.appendChild(nodeG);
+      });
+    }
+  </script>
+</body>
+</html>

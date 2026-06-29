@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --sidebar-bg: rgba(15, 23, 42, 0.65);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --text-color: #f1f5f9;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0ea5e9;
+      --success: #10b981;
+      --success-hover: #059669;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: var(--font-family);
+      user-select: none;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background-color: var(--sidebar-bg);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-color);
+      z-index: 10;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn {
+      background-color: var(--primary);
+      color: #000000;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: background-color 0.2s, transform 0.1s;
+    }
+
+    .btn:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-secondary {
+      background-color: rgba(255, 255, 255, 0.08);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background-color: rgba(255, 255, 255, 0.15);
+    }
+
+    #canvas-container {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+      cursor: grab;
+      background-color: #ffffff;
+    }
+
+    #canvas-container:active {
+      cursor: grabbing;
+    }
+
+    #canvas {
+      position: absolute;
+      transform-origin: 0 0;
+      will-change: transform;
+    }
+
+    /* SVG Styling overrides */
+    svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background-color: #ffffff !important;
+    }
+
+    svg rect[width="100%"][height="100%"] {
+      fill: #ffffff !important;
+    }
+
+    /* Style default lines & paths (wires, gate outlines) */
+    svg line:not(.wire-hitbox):not(.wire-hovered):not(.net-highlighted):not(.path-highlighted):not(.fsm-transition-wire),
+    svg path:not(.wire-hitbox):not(.wire-hovered):not(.net-highlighted):not(.path-highlighted):not(.fsm-transition-wire) {
+      stroke: #000000 !important; /* Classic black */
+      stroke-width: 1.5px !important;
+    }
+
+    /* Style text elements */
+    svg text {
+      fill: #000000 !important;
+      font-family: var(--font-family) !important;
+    }
+
+    /* Style default cells/rects */
+    svg rect:not([width="100%"]):not(.cell-highlighted) {
+      stroke: #000000 !important;
+      fill: #ffffff !important;
+      stroke-width: 1.5px !important;
+    }
+
+    /* State node default styling */
+    svg .state-node ellipse:not(.highlighted):not(.highlighted-source):not(.highlighted-target) {
+      stroke: #000000 !important;
+      fill: #ffffff !important;
+      stroke-width: 1.5px !important;
+    }
+
+    svg circle {
+      stroke: #000000 !important;
+      fill: #ffffff !important;
+    }
+
+    /* Highlight style for FSM states */
+    .state-node {
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .state-node:hover ellipse {
+      stroke: #2563eb !important;
+      stroke-width: 3px !important;
+      filter: drop-shadow(0 0 4px rgba(37, 99, 235, 0.4));
+    }
+
+    /* Hover style for component instantiation blocks */
+    .inst-block {
+      transition: stroke 0.2s ease, stroke-width 0.2s ease;
+    }
+    .inst-block:hover {
+      stroke: #2563eb !important;
+      stroke-width: 2px !important;
+      filter: drop-shadow(0 0 4px rgba(37, 99, 235, 0.4));
+    }
+
+    .state-node.highlighted ellipse {
+      stroke: #3b82f6 !important;
+      stroke-width: 4px !important;
+      filter: drop-shadow(0 0 6px #3b82f6);
+      animation: pulse 1.5s infinite alternate;
+    }
+
+    @keyframes pulse {
+      from {
+        filter: drop-shadow(0 0 2px #3b82f6);
+      }
+      to {
+        filter: drop-shadow(0 0 8px #60a5fa);
+      }
+    }
+
+    #info-banner {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      background-color: var(--sidebar-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 11px;
+      pointer-events: none;
+      z-index: 5;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Wire highlight and path tracing styles */
+    [data-net-name] {
+      transition: stroke 0.2s ease, stroke-width 0.2s ease;
+    }
+    .wire-hitbox {
+      fill: none !important;
+      stroke: transparent !important;
+      stroke-width: 14px !important;
+      cursor: pointer !important;
+      pointer-events: stroke !important;
+    }
+    .wire-hovered {
+      stroke: #2563eb !important;
+      stroke-width: 5px !important;
+    }
+    .net-highlighted {
+      stroke: #2563eb !important;
+      stroke-width: 5px !important;
+      filter: drop-shadow(0 0 6px rgba(37, 99, 235, 0.4));
+    }
+    .path-highlighted {
+      stroke: #3b82f6 !important;
+      stroke-width: 4.5px !important;
+      filter: drop-shadow(0 0 5px #3b82f6);
+    }
+    .cell-highlighted rect, .cell-highlighted path, .cell-highlighted ellipse {
+      stroke: #3b82f6 !important;
+      stroke-width: 2.5px !important;
+    }
+
+    /* FSM Transition highlighting */
+    .fsm-transition-wire {
+      cursor: pointer;
+      transition: stroke 0.2s ease, stroke-width 0.2s ease;
+    }
+    .fsm-transition-wire:hover {
+      stroke: #2563eb !important;
+      stroke-width: 4px !important;
+    }
+    .fsm-transition-wire.highlighted {
+      stroke: #3b82f6 !important;
+      stroke-width: 4.5px !important;
+      filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.6));
+    }
+    .state-node.highlighted-source ellipse {
+      stroke: var(--success) !important; /* Green for source state */
+      stroke-width: 3.5px !important;
+      filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.5));
+    }
+    .state-node.highlighted-target ellipse {
+      stroke: var(--danger) !important; /* Red/Orange for target state */
+      stroke-width: 3.5px !important;
+      filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.5));
+    }
+    .fsm-transition-label {
+      cursor: pointer;
+    }
+  </style>
+  <title>Questassure RTL Viewer</title>
+</head>
+<body>
+  <div id="toolbar">
+    <button class="btn" id="btn-zoom-in">➕ Zoom In</button>
+    <button class="btn" id="btn-zoom-out">➖ Zoom Out</button>
+    <button class="btn btn-secondary" id="btn-reset">🎯 Reset</button>
+    
+    <div id="breadcrumb" style="display: flex; align-items: center; gap: 4px; margin-left: 16px; font-size: 13px; color: var(--text-color); font-weight: 500;"></div>
+    
+    <div style="flex: 1;"></div>
+    <button class="btn btn-secondary" id="btn-export-svg">💾 Export SVG</button>
+    <button class="btn btn-secondary" id="btn-copy-mermaid" style="display: none;">📋 Copy Mermaid</button>
+  </div>
+
+  <div id="canvas-container">
+    <div id="canvas"></div>
+    <div id="info-banner">💡 Cliquez sur un état pour naviguer dans le code VHDL</div>
+    
+    <div id="trace-panel" style="position: absolute; bottom: 12px; right: 12px; background-color: var(--sidebar-bg); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 6px; font-size: 11px; z-index: 5; display: none; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); color: var(--text-color); backdrop-filter: blur(16px);">
+      <span id="trace-title" style="font-weight: bold;">Chemin :</span>
+      <button class="btn" id="btn-trace-forward" style="display: none;"></button>
+      <button class="btn" id="btn-trace-backward" style="display: none;"></button>
+      <button class="btn btn-secondary" id="btn-trace-clear" style="padding: 3px 8px; font-size: 10px;">Effacer la sélection</button>
+    </div>
+  </div>
+
+  <script>
+    const vscode = acquireVsCodeApi();
+    const container = document.getElementById('canvas-container');
+    const canvas = document.getElementById('canvas');
+    let svgElement = null;
+    let rawMermaid = "";
+
+    // Data Path / Netlist connectivity state
+    let netlist = null;
+    let bitToNetName = {};
+    let selectedSignal = "";
+    let bitToDrivers = {}; // bit -> Array of { type: 'cell'|'port', name: string }
+    let bitToReaders = {}; // bit -> Array of { type: 'cell'|'port', name: string }
+    let cellToConnections = {}; // cellName -> { inputs: Set, outputs: Set }
+
+    // Viewport State
+    let zoom = 1.0;
+    let panX = 0;
+    let panY = 0;
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+
+    // Apply Transformation Matrix
+    function updateTransform() {
+      canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+    }
+
+    // Reset Viewport
+    function resetView() {
+      if (!svgElement) return;
+      const rect = container.getBoundingClientRect();
+      const svgW = svgElement.getAttribute('width') || 1000;
+      const svgH = svgElement.getAttribute('height') || 600;
+      
+      zoom = Math.min(rect.width / svgW, rect.height / svgH, 1.2);
+      if (zoom < 0.2) zoom = 0.5;
+      
+      panX = (rect.width - svgW * zoom) / 2;
+      panY = (rect.height - svgH * zoom) / 2;
+      updateTransform();
+    }
+
+    // Clear highlights when clicking on empty space
+    container.addEventListener('click', (e) => {
+      if (!e.target.closest('.state-node') && !e.target.closest('.wire-hitbox') && !e.target.closest('.inst-block') && !e.target.closest('.fsm-transition-wire') && !e.target.closest('.fsm-transition-label')) {
+        clearPathHighlights();
+        if (svgElement) {
+          svgElement.querySelectorAll('.fsm-transition-wire').forEach(el => el.classList.remove('highlighted'));
+          svgElement.querySelectorAll('.state-node').forEach(el => el.classList.remove('highlighted', 'highlighted-source', 'highlighted-target'));
+        }
+        document.getElementById('trace-panel').style.display = 'none';
+        selectedSignal = "";
+      }
+    });
+
+    // Dragging / Panning
+    container.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.state-node') || e.target.closest('[data-net-name]') || e.target.closest('.inst-block')) return;
+      isDragging = true;
+      startX = e.clientX - panX;
+      startY = e.clientY - panY;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      panX = e.clientX - startX;
+      panY = e.clientY - startY;
+      updateTransform();
+    });
+
+    window.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    // Zooming (Wheel)
+    container.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const zoomFactor = 1.1;
+      const rect = container.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      const canvasMouseX = (mouseX - panX) / zoom;
+      const canvasMouseY = (mouseY - panY) / zoom;
+
+      if (e.deltaY < 0) {
+        zoom *= zoomFactor;
+      } else {
+        zoom /= zoomFactor;
+      }
+      zoom = Math.max(0.1, Math.min(zoom, 10));
+
+      panX = mouseX - canvasMouseX * zoom;
+      panY = mouseY - canvasMouseY * zoom;
+
+      updateTransform();
+    }, { passive: false });
+
+    // Buttons
+    document.getElementById('btn-zoom-in').addEventListener('click', () => {
+      zoom *= 1.25;
+      updateTransform();
+    });
+
+    document.getElementById('btn-zoom-out').addEventListener('click', () => {
+      zoom /= 1.25;
+      updateTransform();
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', resetView);
+
+    document.getElementById('btn-export-svg').addEventListener('click', () => {
+      if (!svgElement) return;
+      vscode.postMessage({
+        command: 'exportSvg',
+        svg: svgElement.outerHTML
+      });
+    });
+
+    document.getElementById('btn-copy-mermaid').addEventListener('click', () => {
+      if (!rawMermaid) return;
+      vscode.postMessage({
+        command: 'copyMermaid',
+        mermaid: rawMermaid
+      });
+    });
+
+    // Connectivity Graph Builder
+    function buildConnectivity(netlistObj) {
+      bitToDrivers = {};
+      bitToReaders = {};
+      cellToConnections = {};
+      
+      if (!netlistObj || !netlistObj.modules) return;
+      
+      const moduleNames = Object.keys(netlistObj.modules);
+      if (moduleNames.length === 0) return;
+      
+      const module = netlistObj.modules[moduleNames[0]];
+      
+      // 1. Parse cells
+      for (const cellName in module.cells) {
+        const cell = module.cells[cellName];
+        const inputs = new Set();
+        const outputs = new Set();
+        
+        for (const portName in cell.connections) {
+          const dir = cell.port_directions ? cell.port_directions[portName] : 'input';
+          const bits = cell.connections[portName] || [];
+          bits.forEach(bit => {
+            if (typeof bit === 'number') {
+              if (dir === 'output') {
+                outputs.add(bit);
+                if (!bitToDrivers[bit]) bitToDrivers[bit] = [];
+                bitToDrivers[bit].push({ type: 'cell', name: cellName });
+              } else {
+                inputs.add(bit);
+                if (!bitToReaders[bit]) bitToReaders[bit] = [];
+                bitToReaders[bit].push({ type: 'cell', name: cellName });
+              }
+            }
+          });
+        }
+        cellToConnections[cellName] = { inputs, outputs };
+      }
+      
+      // 2. Parse top-level ports
+      for (const portName in module.ports) {
+        const port = module.ports[portName];
+        const dir = port.direction;
+        port.bits.forEach(bit => {
+          if (typeof bit === 'number') {
+            if (dir === 'input') {
+              if (!bitToDrivers[bit]) bitToDrivers[bit] = [];
+              bitToDrivers[bit].push({ type: 'port', name: portName });
+            } else {
+              if (!bitToReaders[bit]) bitToReaders[bit] = [];
+              bitToReaders[bit].push({ type: 'port', name: portName });
+            }
+          }
+        });
+      }
+    }
+
+    // Path Tracing Algorithms
+    function getForwardPath(startBits) {
+      const visitedBits = new Set(startBits);
+      const visitedCells = new Set();
+      const queue = [...startBits];
+      
+      while (queue.length > 0) {
+        const bit = queue.shift();
+        const readers = bitToReaders[bit] || [];
+        readers.forEach(reader => {
+          if (reader.type === 'cell') {
+            const cellName = reader.name;
+            if (!visitedCells.has(cellName)) {
+              visitedCells.add(cellName);
+              const cellOutputs = cellToConnections[cellName] ? cellToConnections[cellName].outputs : [];
+              cellOutputs.forEach(outBit => {
+                if (!visitedBits.has(outBit)) {
+                  visitedBits.add(outBit);
+                  queue.push(outBit);
+                }
+              });
+            }
+          }
+        });
+      }
+      return { bits: visitedBits, cells: visitedCells };
+    }
+
+    function getBackwardPath(startBits) {
+      const visitedBits = new Set(startBits);
+      const visitedCells = new Set();
+      const queue = [...startBits];
+      
+      while (queue.length > 0) {
+        const bit = queue.shift();
+        const drivers = bitToDrivers[bit] || [];
+        drivers.forEach(driver => {
+          if (driver.type === 'cell') {
+            const cellName = driver.name;
+            if (!visitedCells.has(cellName)) {
+              visitedCells.add(cellName);
+              const cellInputs = cellToConnections[cellName] ? cellToConnections[cellName].inputs : [];
+              cellInputs.forEach(inBit => {
+                if (!visitedBits.has(inBit)) {
+                  visitedBits.add(inBit);
+                  queue.push(inBit);
+                }
+              });
+            }
+          }
+        });
+      }
+      return { bits: visitedBits, cells: visitedCells };
+    }
+
+    function clearPathHighlights() {
+      if (!svgElement) return;
+      svgElement.querySelectorAll('.path-highlighted, .net-highlighted').forEach(el => {
+        el.classList.remove('path-highlighted', 'net-highlighted');
+      });
+      svgElement.querySelectorAll('.cell-highlighted').forEach(el => {
+        el.classList.remove('cell-highlighted');
+      });
+    }
+
+    function highlightPath(pathResult, type) {
+      clearPathHighlights();
+      
+      // Highlight Wires
+      pathResult.bits.forEach(bit => {
+        const wires = svgElement.querySelectorAll(`.n${bit}`);
+        wires.forEach(w => w.classList.add('path-highlighted'));
+      });
+      
+      // Highlight Cells
+      pathResult.cells.forEach(cellName => {
+        const escapedName = cellName.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const cellEls = svgElement.querySelectorAll(`[class~="${escapedName}"], [id="${escapedName}"]`);
+        cellEls.forEach(el => el.classList.add('cell-highlighted'));
+      });
+    }
+
+    // Path tracing toolbar controls
+    document.getElementById('btn-trace-forward').addEventListener('click', () => {
+      if (!selectedSignal || !netlist) return;
+      const moduleNames = Object.keys(netlist.modules);
+      if (moduleNames.length === 0) return;
+      const module = netlist.modules[moduleNames[0]];
+      
+      // Get bits for selected net
+      let startBits = [];
+      for (const netName in module.netnames) {
+        let clean = netName;
+        if (clean.startsWith('\\')) clean = clean.substring(1);
+        if (clean.toLowerCase() === selectedSignal.toLowerCase()) {
+          startBits = module.netnames[netName].bits;
+          break;
+        }
+      }
+      if (startBits.length > 0) {
+        const pathRes = getForwardPath(startBits);
+        highlightPath(pathRes, 'forward');
+      }
+    });
+
+    document.getElementById('btn-trace-backward').addEventListener('click', () => {
+      if (!selectedSignal || !netlist) return;
+      const moduleNames = Object.keys(netlist.modules);
+      if (moduleNames.length === 0) return;
+      const module = netlist.modules[moduleNames[0]];
+      
+      let startBits = [];
+      for (const netName in module.netnames) {
+        let clean = netName;
+        if (clean.startsWith('\\')) clean = clean.substring(1);
+        if (clean.toLowerCase() === selectedSignal.toLowerCase()) {
+          startBits = module.netnames[netName].bits;
+          break;
+        }
+      }
+      if (startBits.length > 0) {
+        const pathRes = getBackwardPath(startBits);
+        highlightPath(pathRes, 'backward');
+      }
+    });
+
+    document.getElementById('btn-trace-clear').addEventListener('click', () => {
+      clearPathHighlights();
+      document.getElementById('trace-panel').style.display = 'none';
+      selectedSignal = "";
+    });
+
+    // Message receiver from extension host
+    window.addEventListener('message', (event) => {
+      const message = event.data;
+      switch (message.command) {
+        case 'loadSvg':
+          canvas.innerHTML = message.svg;
+          svgElement = canvas.querySelector('svg');
+          rawMermaid = message.mermaid || "";
+          netlist = message.netlist;
+          bitToNetName = message.bitToNetName || {};
+          
+          document.getElementById('trace-panel').style.display = 'none';
+          selectedSignal = "";
+          
+          if (netlist) {
+            buildConnectivity(netlist);
+          }
+
+          if (rawMermaid) {
+            document.getElementById('btn-copy-mermaid').style.display = 'block';
+          } else {
+            document.getElementById('btn-copy-mermaid').style.display = 'none';
+          }
+          
+          // Render Breadcrumbs
+          const breadcrumbEl = document.getElementById('breadcrumb');
+          breadcrumbEl.innerHTML = '';
+          if (message.hierarchyStack && message.hierarchyStack.length > 0) {
+            message.hierarchyStack.forEach((item, index) => {
+              if (index > 0) {
+                const separator = document.createElement('span');
+                separator.textContent = ' ➔ ';
+                separator.style.color = 'var(--vscode-descriptionForeground, #888)';
+                breadcrumbEl.appendChild(separator);
+              }
+              const link = document.createElement('span');
+              link.textContent = item.entityName;
+              link.style.cursor = 'pointer';
+              if (index === message.hierarchyStack.length - 1) {
+                link.style.fontWeight = 'bold';
+                link.style.color = 'var(--vscode-textLink-activeForeground, #007acc)';
+              } else {
+                link.style.color = 'var(--vscode-textLink-foreground, #007acc)';
+                link.style.textDecoration = 'underline';
+                link.addEventListener('click', () => {
+                  vscode.postMessage({
+                    command: 'jumpToHierarchy',
+                    index: index
+                  });
+                });
+              }
+              breadcrumbEl.appendChild(link);
+            });
+          }
+
+          // Set absolute widths/heights so scaling works
+          if (svgElement) {
+            const w = svgElement.getAttribute('width') || 1000;
+            const h = svgElement.getAttribute('height') || 600;
+            canvas.style.width = w + 'px';
+            canvas.style.height = h + 'px';
+            
+            // Connect FSM state nodes click events
+            const stateNodes = canvas.querySelectorAll('.state-node');
+            const instBlocks = canvas.querySelectorAll('[data-inst-type]');
+            const infoBanner = document.getElementById('info-banner');
+            
+            // Label wires with data-net-name
+            const paths = svgElement.querySelectorAll('path, g, line, edge, polyline, polygon');
+            paths.forEach(el => {
+              const className = el.getAttribute('class') || '';
+              
+              // Match net_X,Y or nX format
+              let bits = [];
+              let netMatch = /\bnet_([\d,]+)\b/.exec(className);
+              if (netMatch) {
+                bits = netMatch[1].split(',').map(b => parseInt(b));
+              } else {
+                let nMatch = /\bn(\d+)\b/.exec(className);
+                if (nMatch) {
+                  bits = [parseInt(nMatch[1])];
+                }
+              }
+
+              if (bits.length > 0) {
+                let netName = null;
+                for (const bitNum of bits) {
+                  if (bitToNetName[bitNum]) {
+                    netName = bitToNetName[bitNum];
+                    break;
+                  }
+                }
+
+                if (netName) {
+                  const lowerNet = netName.toLowerCase();
+                  el.setAttribute('data-net-name', lowerNet);
+                  el.style.cursor = 'pointer';
+                  
+                  // Ensure el has n<bit> classes so getForwardPath/getBackwardPath highlighting works!
+                  bits.forEach(bitNum => {
+                    el.classList.add(`n${bitNum}`);
+                  });
+                  
+                  // Propagate both n<bit> classes and data-net-name to children if it's a group
+                  if (el.tagName.toLowerCase() === 'g') {
+                    el.querySelectorAll('path, line, polyline, polygon').forEach(child => {
+                      child.setAttribute('data-net-name', lowerNet);
+                      child.style.cursor = 'pointer';
+                      bits.forEach(bitNum => {
+                        child.classList.add(`n${bitNum}`);
+                      });
+                    });
+                  }
+                  
+                  // Propagate to parent group
+                  if (el.parentElement) {
+                    const parentG = el.parentElement.closest('g');
+                    if (parentG && parentG !== svgElement) {
+                      parentG.setAttribute('data-net-name', lowerNet);
+                      parentG.style.cursor = 'pointer';
+                      bits.forEach(bitNum => {
+                        parentG.classList.add(`n${bitNum}`);
+                      });
+                    }
+                  }
+                }
+              }
+            });
+
+    function traceAndHighlightSignal(netName) {
+      if (!netName || !netlist) return;
+      clearPathHighlights();
+      
+      const bits = [];
+      const moduleNames = Object.keys(netlist.modules);
+      if (moduleNames.length > 0) {
+        const mod = netlist.modules[moduleNames[0]];
+        for (const nName in mod.netnames) {
+          let cleanName = nName;
+          if (cleanName.startsWith('\\')) cleanName = cleanName.substring(1);
+          if (cleanName.toLowerCase() === netName.toLowerCase()) {
+            mod.netnames[nName].bits.forEach(b => {
+              if (typeof b === 'number') bits.push(b);
+            });
+          }
+        }
+      }
+      
+      if (bits.length > 0) {
+        const connectedCells = new Set();
+        
+        bits.forEach(bit => {
+          // Add immediate drivers (previous block)
+          const drivers = bitToDrivers[bit] || [];
+          drivers.forEach(d => {
+            if (d.name) connectedCells.add(d.name);
+          });
+          
+          // Add immediate readers (next block)
+          const readers = bitToReaders[bit] || [];
+          readers.forEach(r => {
+            if (r.name) connectedCells.add(r.name);
+          });
+        });
+        
+        // Highlight all connected cells
+        connectedCells.forEach(cellName => {
+          const escapedName = cellName.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+          const cellEls = svgElement.querySelectorAll(`[class~="${escapedName}"], [id="${escapedName}"]`);
+          cellEls.forEach(el => el.classList.add('cell-highlighted'));
+        });
+
+        // Highlight clicked net
+        const wires = svgElement.querySelectorAll(`[data-net-name="${netName.toLowerCase()}"]`);
+        wires.forEach(w => w.classList.add('net-highlighted'));
+      }
+    }
+
+    function highlightFsmTransition(wire, fromState, toState) {
+      if (!svgElement) return;
+      
+      // Clear previous transition and state highlights
+      svgElement.querySelectorAll('.fsm-transition-wire').forEach(el => {
+        el.classList.remove('highlighted');
+      });
+      svgElement.querySelectorAll('.state-node').forEach(el => {
+        el.classList.remove('highlighted', 'highlighted-source', 'highlighted-target');
+      });
+      
+      // Highlight the clicked wire
+      if (wire) {
+        wire.classList.add('highlighted');
+      }
+      
+      // Highlight source state
+      const sourceNode = svgElement.querySelector(`[data-state-name="${fromState.toLowerCase()}"]`);
+      if (sourceNode) {
+        sourceNode.classList.add('highlighted-source');
+      }
+      
+      // Highlight target state
+      const targetNode = svgElement.querySelector(`[data-state-name="${toState.toLowerCase()}"]`);
+      if (targetNode) {
+        targetNode.classList.add('highlighted-target');
+      }
+    }
+
+            // Connect wire clicks
+            const wirePaths = svgElement.querySelectorAll('[data-net-name]');
+            wirePaths.forEach(wire => {
+              // Create a thick, invisible hitbox path cloned from the thin visible wire
+              const hitbox = wire.cloneNode(true);
+              hitbox.classList.add('wire-hitbox');
+              
+              // Prevent mouse interactions on the thin visible wire to keep it clean
+              wire.style.pointerEvents = 'none';
+              
+              // Insert the hitbox overlay directly after the visible wire path in the DOM
+              wire.parentNode.insertBefore(hitbox, wire.nextSibling);
+
+              // Route hovers from the hitbox to the visible wire
+              hitbox.addEventListener('mouseenter', () => {
+                wire.classList.add('wire-hovered');
+              });
+              hitbox.addEventListener('mouseleave', () => {
+                wire.classList.remove('wire-hovered');
+              });
+
+              // Route clicks from the hitbox
+              hitbox.addEventListener('click', (e) => {
+                e.stopPropagation();
+                clearPathHighlights();
+                
+                // Highlight only the specific clicked wire segment
+                wire.classList.add('net-highlighted');
+                
+                const netName = hitbox.getAttribute('data-net-name');
+                selectedSignal = netName;
+                
+                // Show trace panel
+                const tracePanel = document.getElementById('trace-panel');
+                document.getElementById('trace-title').textContent = `Fil : ${netName}`;
+                tracePanel.style.display = 'flex';
+                
+                vscode.postMessage({
+                  command: 'selectSignal',
+                  signal: netName
+                });
+              });
+            });
+
+            // Connect FSM transition wire clicks
+            const fsmWires = svgElement.querySelectorAll('.fsm-transition-wire');
+            fsmWires.forEach(wire => {
+              wire.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const fromState = wire.getAttribute('data-from');
+                const toState = wire.getAttribute('data-to');
+                const cond = wire.getAttribute('data-cond');
+                
+                highlightFsmTransition(wire, fromState, toState);
+                
+                vscode.postMessage({
+                  command: 'selectTransition',
+                  from: fromState,
+                  to: toState,
+                  cond: cond
+                });
+              });
+            });
+
+            // Connect FSM transition label clicks
+            const fsmLabels = svgElement.querySelectorAll('.fsm-transition-label');
+            fsmLabels.forEach(label => {
+              label.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const fromState = label.getAttribute('data-from');
+                const toState = label.getAttribute('data-to');
+                const cond = label.getAttribute('data-cond');
+                const wireId = label.getAttribute('data-wire-id');
+                const wire = svgElement.getElementById(wireId);
+                
+                highlightFsmTransition(wire, fromState, toState);
+                
+                vscode.postMessage({
+                  command: 'selectTransition',
+                  from: fromState,
+                  to: toState,
+                  cond: cond
+                });
+              });
+            });
+
+            if (stateNodes.length > 0 || instBlocks.length > 0 || fsmWires.length > 0) {
+              infoBanner.style.display = 'block';
+              if (stateNodes.length > 0 && fsmWires.length > 0) {
+                infoBanner.textContent = "💡 Cliquez sur un état ou une transition pour naviguer dans le code";
+              } else if (stateNodes.length > 0 && instBlocks.length > 0) {
+                infoBanner.textContent = "💡 Clicquez sur un état ou double-cliquez sur un bloc pour naviguer";
+              } else if (instBlocks.length > 0) {
+                infoBanner.textContent = "💡 Double-cliquez sur un bloc pour ouvrir sa hiérarchie";
+              } else {
+                infoBanner.textContent = "💡 Cliquez sur un élément pour naviguer dans le code VHDL";
+              }
+              
+              stateNodes.forEach(node => {
+                const textEl = node.querySelector('text');
+                if (textEl) {
+                  const stateName = textEl.textContent.trim();
+                  node.setAttribute('data-state-name', stateName.toLowerCase());
+                  node.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    vscode.postMessage({
+                      command: 'selectState',
+                      state: stateName
+                    });
+                  });
+                }
+              });
+
+              instBlocks.forEach(block => {
+                block.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  const componentName = block.getAttribute('data-inst-type');
+                  vscode.postMessage({
+                    command: 'clickBlock',
+                    componentName: componentName
+                  });
+                });
+                block.addEventListener('dblclick', (e) => {
+                  e.stopPropagation();
+                  const componentName = block.getAttribute('data-inst-type');
+                  vscode.postMessage({
+                    command: 'descendHierarchy',
+                    componentName: componentName
+                  });
+                });
+              });
+            } else {
+              infoBanner.style.display = 'none';
+            }
+          }
+          
+          resetView();
+          break;
+
+        case 'highlightState':
+          if (!svgElement) return;
+          const searchName = message.state.toLowerCase();
+          const nodes = canvas.querySelectorAll('.state-node');
+          nodes.forEach(node => {
+            const nameAttr = node.getAttribute('data-state-name');
+            if (nameAttr === searchName) {
+              node.classList.add('highlighted');
+              if (message.center) {
+                const nodeRect = node.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+                if (nodeRect.left < containerRect.left || nodeRect.right > containerRect.right ||
+                    nodeRect.top < containerRect.top || nodeRect.bottom > containerRect.bottom) {
+                  const transformAttr = node.getAttribute('transform') || "";
+                  const match = /translate\(([^,]+),\s*([^)]+)\)/.exec(transformAttr);
+                  if (match) {
+                    const nx = parseFloat(match[1]);
+                    const ny = parseFloat(match[2]);
+                    panX = containerRect.width / 2 - nx * zoom;
+                    panY = containerRect.height / 2 - ny * zoom;
+                    updateTransform();
+                  }
+                }
+              }
+            } else {
+              node.classList.remove('highlighted');
+            }
+          });
+          break;
+
+        case 'highlightSignal':
+          if (!svgElement) return;
+          const searchSig = message.signal.toLowerCase();
+          const wires = canvas.querySelectorAll('[data-net-name]');
+          wires.forEach(wire => {
+            const nameAttr = wire.getAttribute('data-net-name');
+            if (nameAttr === searchSig) {
+              wire.classList.add('net-highlighted');
+            } else {
+              wire.classList.remove('net-highlighted');
+            }
+          });
+          break;
+      }
+    });
+
+    // Notify ready
+    vscode.postMessage({ command: 'ready' });
+  </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "displayName": "Questassure VHDL",
+  "description": "Formatage VHDL, vérification syntaxique avec diagnostics GHDL et simulations de testbench.",
+  "configuration.title": "Questassure",
+  "config.ghdlPath.description": "Chemin vers l'exécutable GHDL. Utilisé pour compiler, analyser et simuler le VHDL.",
+  "config.stopTime.description": "Temps d'arrêt de simulation par défaut pour les exécutions de testbench GHDL.",
+  "config.language.description": "Langue de l'extension. Choisissez 'auto' pour utiliser la langue d'affichage de VS Code.",
+  "config.language.auto": "Langue du système",
+  "config.language.en": "Anglais",
+  "config.language.fr": "Français",
+  "command.runTestbench": "Questassure: Lancer la simulation/Testbench",
+  "command.compileFile": "Questassure: Compiler le fichier VHDL",
+  "command.showRTL": "Questassure : Afficher le schéma RTL",
+  "command.generateTestbench": "Questassure : Nouveau Testbench",
+  "command.generateFsmTemplate": "Questassure : Nouveau modèle FSM",
+  "command.instantiateComponent": "Questassure : Instancier un composant",
+  "command.openFsmDesigner": "Questassure : Visualiser/Éditer FSM",
+  "config.openWavesOnTestExplorerRun.description": "Ouvrir automatiquement le visualiseur de chronogramme lors de l'exécution des tests depuis l'Explorateur de tests."
+}

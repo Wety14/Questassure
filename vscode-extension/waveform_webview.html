@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --sidebar-bg: rgba(15, 23, 42, 0.65);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --text-color: #f1f5f9;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0ea5e9;
+      --success: #10b981;
+      --success-hover: #059669;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: var(--font-family);
+      display: flex;
+      flex-direction: column;
+    }
+
+    #toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 16px;
+      background-color: var(--sidebar-bg);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-color);
+      z-index: 10;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn {
+      background-color: var(--primary);
+      color: #000000;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: background-color 0.2s, transform 0.1s;
+    }
+
+    .btn:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-secondary {
+      background-color: rgba(255, 255, 255, 0.08);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background-color: rgba(255, 255, 255, 0.15);
+    }
+
+    #main-container {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #sidebar {
+      width: 300px;
+      border-right: 1px solid var(--border-color);
+      background-color: var(--sidebar-bg);
+      backdrop-filter: blur(16px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 12px 16px;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--primary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #search-box {
+      margin: 12px;
+      padding: 8px 12px;
+      background-color: rgba(0, 0, 0, 0.25);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    #search-box:focus {
+      border-color: var(--primary);
+    }
+
+    #signal-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 0;
+    }
+
+    .signal-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 16px;
+      font-size: 12px;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      user-select: none;
+      transition: background-color 0.2s;
+    }
+
+    .signal-item:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .signal-item.active {
+      border-left-color: var(--primary);
+      background-color: rgba(56, 189, 248, 0.1);
+      color: var(--text-color);
+    }
+
+    .signal-checkbox {
+      margin-right: 8px;
+    }
+
+    .signal-name {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .signal-type {
+      font-size: 10px;
+      opacity: 0.6;
+      margin-left: 6px;
+      color: var(--text-muted);
+    }
+
+    /* Sidebar Group Styles */
+    .sidebar-group {
+      margin-bottom: 2px;
+    }
+
+    .sidebar-group-header {
+      display: flex;
+      align-items: center;
+      padding: 8px 16px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      background-color: rgba(255, 255, 255, 0.04);
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.2s ease;
+    }
+
+    .sidebar-group-header:hover {
+      background-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .sidebar-group-toggle {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      line-height: 14px;
+      text-align: center;
+      margin-right: 6px;
+      font-size: 8px;
+      transition: transform 0.15s ease;
+      color: var(--text-muted);
+    }
+
+    .sidebar-group.collapsed .sidebar-group-toggle {
+      transform: rotate(-90deg);
+    }
+
+    .sidebar-group-name {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sidebar-group-content {
+      padding-left: 6px;
+    }
+
+    .sidebar-group.collapsed .sidebar-group-content {
+      display: none;
+    }
+
+    #wave-viewer {
+      flex: 1;
+      overflow: auto;
+      background-color: var(--bg-color);
+      position: relative;
+      outline: none;
+    }
+
+    #timeline-canvas {
+      position: sticky;
+      top: 0;
+      height: 25px;
+      background-color: #0f172a;
+      border-bottom: 1px solid var(--border-color);
+      z-index: 2;
+    }
+
+    #wave-canvas-container {
+      width: 100%;
+      height: calc(100% - 25px);
+      position: relative;
+    }
+
+    .wave-row {
+      height: 38px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      position: relative;
+    }
+
+    .wave-row-label {
+      position: sticky;
+      left: 0;
+      width: 200px;
+      min-width: 200px;
+      padding-left: 12px;
+      background-color: rgba(11, 15, 25, 0.95);
+      border-right: 1px solid var(--border-color);
+      height: 100%;
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      z-index: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .wave-row-graphics {
+      flex: 1;
+      height: 100%;
+      position: relative;
+    }
+
+    /* Wave Viewer Group Styles */
+    .wave-group-header {
+      height: 28px;
+      display: flex;
+      align-items: center;
+      background-color: #0f172a;
+      border-bottom: 1px solid var(--border-color);
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      position: relative;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.2s ease;
+    }
+
+    .wave-group-header:hover {
+      background-color: rgba(255, 255, 255, 0.04);
+    }
+
+    .wave-group-label {
+      position: sticky;
+      left: 0;
+      width: 200px;
+      min-width: 200px;
+      padding-left: 12px;
+      background-color: #0f172a;
+      border-right: 1px solid var(--border-color);
+      height: 100%;
+      display: flex;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--primary);
+      z-index: 1;
+      box-sizing: border-box;
+      transition: background-color 0.2s ease;
+    }
+
+    .wave-group-header:hover .wave-group-label {
+      background-color: rgba(255, 255, 255, 0.04);
+    }
+
+    .wave-group-toggle {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      line-height: 14px;
+      text-align: center;
+      margin-right: 6px;
+      font-size: 8px;
+      transition: transform 0.15s ease;
+      color: var(--primary);
+    }
+
+    .wave-group-header.collapsed .wave-group-toggle {
+      transform: rotate(-90deg);
+    }
+
+    .wave-group-bar {
+      flex: 1;
+      height: 100%;
+      background-color: #0c101a;
+      position: relative;
+      border-left: 1px solid var(--border-color);
+    }
+
+    /* Vertical Cursor Line */
+    #time-cursor {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background-color: rgba(239, 68, 68, 0.4);
+      pointer-events: none;
+      z-index: 5;
+      display: none;
+    }
+
+    #cursor-a {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background-color: #00e5ff;
+      pointer-events: none;
+      z-index: 4;
+      display: none;
+      box-shadow: 0 0 8px rgba(0, 229, 255, 0.8);
+    }
+
+    #cursor-b {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background-color: #ff9100;
+      pointer-events: none;
+      z-index: 4;
+      display: none;
+      box-shadow: 0 0 8px rgba(255, 145, 0, 0.8);
+    }
+
+    #time-tooltip {
+      position: absolute;
+      background-color: var(--danger);
+      color: white;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      pointer-events: none;
+      z-index: 6;
+      display: none;
+      top: 2px;
+      font-weight: bold;
+    }
+
+    #empty-state {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      opacity: 0.5;
+    }
+  </style>
+  <title>Questassure Waveform Viewer</title>
+</head>
+<body>
+  <div id="toolbar">
+    <button class="btn" id="btn-zoom-in">➕ Zoom In</button>
+    <button class="btn" id="btn-zoom-out">➖ Zoom Out</button>
+    <button class="btn btn-secondary" id="btn-fit">🎯 Fit All</button>
+    <div style="width: 1px; height: 20px; background-color: var(--border-color);"></div>
+    <button class="btn" id="btn-save-preset">💾 Save Preset</button>
+    <button class="btn btn-secondary" id="btn-load-preset">📂 Load Preset</button>
+    <div style="width: 1px; height: 20px; background-color: var(--border-color);"></div>
+    <button class="btn btn-secondary" id="btn-load-ref-vcd">📂 Charger VCD Réf</button>
+    <button class="btn btn-secondary" id="btn-clear-ref-vcd" style="display: none; background-color: var(--danger); color: white;">❌ Effacer Réf</button>
+    <span id="ref-vcd-status" style="font-size: 11px; opacity: 0.8; margin-left: 8px; display: none;"></span>
+    <div style="flex: 1;"></div>
+    <div id="cursor-info" style="display: flex; align-items: center; gap: 12px; background: rgba(0, 0, 0, 0.25); padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-color); font-family: monospace; font-size: 11px; margin-right: 15px;">
+      <span style="color: #00e5ff;">A: <span id="val-cursor-a">-</span></span>
+      <span style="color: #ff9100;">B: <span id="val-cursor-b">-</span></span>
+      <span style="color: var(--text-color); font-weight: bold;">Δt: <span id="val-delta-t">-</span></span>
+    </div>
+    <div id="format-container" style="font-size: 11px;">
+      Format:
+      <select id="select-format" style="background: rgba(0, 0, 0, 0.25); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 8px; outline: none;">
+        <option value="hex">Hexadecimal</option>
+        <option value="bin">Binaire</option>
+        <option value="dec">Décimal</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="main-container">
+    <div id="sidebar">
+      <div class="sidebar-header">
+        <span>Signaux disponibles</span>
+      </div>
+      <input type="text" id="search-box" placeholder="Filtrer les signaux..." />
+      <div id="signal-list"></div>
+    </div>
+
+    <div id="wave-viewer">
+      <div id="timeline-canvas">
+        <svg id="timeline-svg" style="width: 100%; height: 100%;"></svg>
+      </div>
+      <div id="wave-canvas-container">
+        <!-- Render rows dynamically here -->
+      </div>
+      <div id="time-cursor"></div>
+      <div id="cursor-a"></div>
+      <div id="cursor-b"></div>
+      <div id="time-tooltip">0 ps</div>
+    </div>
+
+    <div id="empty-state">
+      <h3>Aucune donnée de simulation</h3>
+      <p>Lancez un testbench VHDL pour visualiser les chronogrammes.</p>
+    </div>
+  </div>
+
+  <script>
+    const vscode = acquireVsCodeApi();
+    const listContainer = document.getElementById('signal-list');
+    const searchBox = document.getElementById('search-box');
+    const waveViewer = document.getElementById('wave-viewer');
+    const waveContainer = document.getElementById('wave-canvas-container');
+    const timelineSvg = document.getElementById('timeline-svg');
+    const timeCursor = document.getElementById('time-cursor');
+    const timeTooltip = document.getElementById('time-tooltip');
+    const emptyState = document.getElementById('empty-state');
+    const formatSelect = document.getElementById('select-format');
+    const cursorLineA = document.getElementById('cursor-a');
+    const cursorLineB = document.getElementById('cursor-b');
+
+    // State Variables
+    let parsedVcd = null;
+    let cursorTimeA = null;
+    let cursorTimeB = null;
+    let referenceVcd = null;
+    let referenceVcdName = "";
+    let visibleSignals = []; // List of signal IDs to display
+    let zoomX = 0.5; // Pixels per timescale unit
+    let timeLimit = 1000; // Total simulation time
+    let timescale = "1ps";
+    let activePreset = [];
+    let enumMap = {};
+    let collapsedSidebarGroups = new Set();
+    let collapsedWaveGroups = new Set();
+
+    function getComponentPath(signalName) {
+      const parts = signalName.split('.');
+      if (parts.length <= 1) return 'Global';
+      parts.pop();
+      return parts.join('.');
+    }
+
+    // VCD Parser Implementation
+    function parseVCD(text) {
+      const lines = text.split(/\r?\n/);
+      const signals = [];
+      const varMap = {};
+      const changes = {};
+      
+      let currentTime = 0;
+      let inScope = [];
+      
+      for (let line of lines) {
+        line = line.trim();
+        if (!line) continue;
+        
+        if (line.startsWith('$scope')) {
+          const parts = line.split(/\s+/);
+          if (parts[2]) inScope.push(parts[2]);
+        } else if (line.startsWith('$upscope')) {
+          inScope.pop();
+        } else if (line.startsWith('$var')) {
+          const parts = line.split(/\s+/);
+          // $var reg 8 ) data [7:0] $end
+          // 0: $var, 1: type, 2: size, 3: id, 4: name, 5+: bracket/range
+          const type = parts[1];
+          const size = parseInt(parts[2]);
+          const id = parts[3];
+          const name = parts[4];
+          const fullName = (inScope.length > 0 ? inScope.join('.') + '.' : '') + name;
+          
+          const signal = { id, name: fullName, size, type, changes: [] };
+          signals.push(signal);
+          varMap[id] = signal;
+          changes[id] = [];
+        } else if (line.startsWith('$timescale')) {
+          const parts = line.split(/\s+/);
+          // e.g. $timescale 1ps $end
+          const ts = parts.slice(1).join(' ').replace('$end', '').trim();
+          if (ts) timescale = ts;
+        } else if (line.startsWith('#')) {
+          currentTime = parseInt(line.substring(1));
+        } else if (line.startsWith('$') || line.startsWith('x') || line.startsWith('z')) {
+          // Meta commands, skip
+          continue;
+        } else {
+          // Value change line
+          // Single bit: 1! or 0! or z! or x!
+          // Vector: b0110 % or r1.23 %
+          if (line.startsWith('b') || line.startsWith('B') || line.startsWith('r') || line.startsWith('R') || line.startsWith('s') || line.startsWith('S')) {
+            const parts = line.split(/\s+/);
+            const val = parts[0].substring(1);
+            const id = parts[1];
+            if (changes[id]) {
+              changes[id].push({ time: currentTime, val });
+            }
+          } else {
+            const val = line[0];
+            const id = line.substring(1);
+            if (changes[id]) {
+              changes[id].push({ time: currentTime, val });
+            }
+          }
+        }
+      }
+
+      // Populate signals changes
+      signals.forEach(sig => {
+        sig.changes = changes[sig.id] || [];
+        // Sort changes by time
+        sig.changes.sort((a, b) => a.time - b.time);
+      });
+
+      timeLimit = currentTime;
+      return { signals, varMap };
+    }
+
+    // Render Timeline Header
+    function renderTimeline(width) {
+      timelineSvg.style.width = width + 'px';
+      timelineSvg.innerHTML = '';
+      
+      const tickSpacing = 100; // pixels between labels
+      const steps = Math.floor(width / tickSpacing);
+      
+      for (let i = 0; i <= steps; i++) {
+        const x = i * tickSpacing;
+        const timeVal = Math.round(x / zoomX);
+        if (timeVal > timeLimit) break;
+        
+        // Tick Line
+        const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        tick.setAttribute('x1', x + 200);
+        tick.setAttribute('y1', 15);
+        tick.setAttribute('x2', x + 200);
+        tick.setAttribute('y2', 25);
+        tick.setAttribute('stroke', 'rgba(255, 255, 255, 0.1)');
+        tick.setAttribute('stroke-width', '1');
+        timelineSvg.appendChild(tick);
+        
+        // Text Label
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', x + 200);
+        text.setAttribute('y', 12);
+        text.setAttribute('fill', 'var(--primary)');
+        text.setAttribute('font-size', '9px');
+        text.setAttribute('text-anchor', 'middle');
+        text.textContent = `${timeVal} ${timescale}`;
+        timelineSvg.appendChild(text);
+      }
+    }
+
+    function calculateDiffSegments(currentSig, refSig) {
+      const diffs = [];
+      if (!currentSig || !refSig) return diffs;
+      
+      const timeSet = new Set();
+      currentSig.changes.forEach(c => timeSet.add(c.time));
+      refSig.changes.forEach(c => timeSet.add(c.time));
+      timeSet.add(0);
+      
+      const times = Array.from(timeSet).sort((a, b) => a - b);
+      
+      function getValAt(sig, t) {
+        let val = 'x';
+        for (const c of sig.changes) {
+          if (c.time <= t) {
+            val = c.val;
+          } else {
+            break;
+          }
+        }
+        return val;
+      }
+      
+      let inDiff = false;
+      let diffStart = 0;
+      
+      for (let i = 0; i < times.length; i++) {
+        const t = times[i];
+        const valCur = getValAt(currentSig, t);
+        const valRef = getValAt(refSig, t);
+        
+        const isDiff = (valCur !== valRef);
+        
+        if (isDiff && !inDiff) {
+          inDiff = true;
+          diffStart = t;
+        } else if (!isDiff && inDiff) {
+          inDiff = false;
+          diffs.push({ start: diffStart, end: t });
+        }
+      }
+      
+      if (inDiff) {
+        const lastRefTime = refSig.changes[refSig.changes.length - 1]?.time || 0;
+        const lastCurTime = currentSig.changes[currentSig.changes.length - 1]?.time || 0;
+        diffs.push({ start: diffStart, end: Math.max(timeLimit, lastRefTime, lastCurTime) });
+      }
+      
+      return diffs;
+    }
+
+    // Draw Signal Path as SVG
+    function drawWaveSVG(sig, width) {
+      const changes = sig.changes;
+      if (changes.length === 0) return '';
+      
+      const simpleName = sig.name.split('.').pop().toLowerCase();
+      const states = enumMap[simpleName];
+      const isBus = sig.size > 1 || states;
+      
+      const h = 30; // height of wave
+      const mid = 15;
+      const top = 3;
+      const bottom = 27;
+
+      let diffPaths = '';
+      if (referenceVcd) {
+        const refSig = referenceVcd.signals.find(s => s.name === sig.name);
+        const diffSegments = calculateDiffSegments(sig, refSig);
+        diffSegments.forEach(d => {
+          const xStart = d.start * zoomX;
+          const xEnd = d.end * zoomX;
+          const w = xEnd - xStart;
+          if (w > 0) {
+            diffPaths += `<rect x="${xStart}" y="0" width="${w}" height="38" fill="rgba(239, 68, 68, 0.18)" stroke="rgba(239, 68, 68, 0.35)" stroke-width="0.5" />`;
+          }
+        });
+      }
+
+      let drawPaths = '';
+      
+      if (!isBus) {
+        let lastVal = 'x';
+        let lastX = 0;
+        let points = [];
+
+        // Add initial value at time 0
+        const firstVal = changes[0].val;
+        let startY = firstVal === '1' ? top : (firstVal === '0' ? bottom : mid);
+        points.push(`M 0 ${startY}`);
+        lastVal = firstVal;
+
+        for (const change of changes) {
+          const x = change.time * zoomX;
+          let y = change.val === '1' ? top : (change.val === '0' ? bottom : mid);
+          
+          // Draw vertical step
+          points.push(`L ${x} ${startY}`);
+          points.push(`L ${x} ${y}`);
+          
+          lastX = x;
+          lastVal = change.val;
+          startY = y;
+        }
+        
+        // Extend to end of timeline
+        points.push(`L ${width} ${startY}`);
+        
+        drawPaths = `<path d="${points.join(' ')}" fill="none" stroke="var(--success)" stroke-width="2" />`;
+      } else {
+        // Multi-bit Bus or Enum
+        // Draws hexagonal cells
+        let lastX = 0;
+        let lastVal = 'x';
+        const format = formatSelect.value;
+
+        for (let i = 0; i < changes.length; i++) {
+          const change = changes[i];
+          const nextChange = changes[i + 1];
+          const xStart = change.time * zoomX;
+          const xEnd = nextChange ? nextChange.time * zoomX : width;
+          
+          if (xEnd <= xStart) continue;
+
+          // Hexagonal block
+          const boxH = bottom - top;
+          const leftSlope = Math.min(xStart + 4, xEnd);
+          const rightSlope = Math.max(xEnd - 4, xStart);
+          
+          const pathPoints = [
+            `M ${xStart} ${mid}`,
+            `L ${leftSlope} ${top}`,
+            `L ${rightSlope} ${top}`,
+            `L ${xEnd} ${mid}`,
+            `L ${rightSlope} ${bottom}`,
+            `L ${leftSlope} ${bottom}`,
+            'Z'
+          ].join(' ');
+
+          drawPaths += `<path d="${pathPoints}" fill="#1e293b" stroke="var(--primary)" stroke-width="1.2" />`;
+
+          // Format value text
+          let displayVal = change.val;
+          if (states) {
+            const idx = parseInt(change.val, 2);
+            if (!isNaN(idx) && states[idx] !== undefined) {
+              displayVal = states[idx];
+            } else {
+              const upperVal = change.val.toUpperCase();
+              const matchedState = states.find(s => s.toUpperCase() === upperVal);
+              if (matchedState !== undefined) {
+                displayVal = matchedState;
+              } else {
+                displayVal = change.val;
+              }
+            }
+          } else {
+            if (format === 'hex') {
+              displayVal = '0x' + parseInt(change.val, 2).toString(16).toUpperCase();
+            } else if (format === 'dec') {
+              displayVal = parseInt(change.val, 2).toString(10);
+            }
+            if (isNaN(parseInt(change.val, 2))) {
+              displayVal = change.val;
+            }
+          }
+
+          // Text labels inside hex cell
+          const textW = xEnd - xStart;
+          if (textW > 25) {
+            drawPaths += `<text x="${xStart + textW/2}" y="${mid + 4}" fill="var(--text-color)" font-size="9px" text-anchor="middle" font-weight="bold">${displayVal}</text>`;
+          }
+        }
+      }
+      return diffPaths + drawPaths;
+    }
+
+    // Main Render Loop
+    function renderWaves() {
+      if (!parsedVcd) return;
+
+      const signalsToRender = parsedVcd.signals.filter(s => visibleSignals.includes(s.id));
+      const width = Math.max(timeLimit * zoomX, waveViewer.clientWidth - 200);
+
+      // Render timeline ruler
+      renderTimeline(width);
+
+      // Group signals by component path
+      const groups = {};
+      const groupOrder = [];
+
+      signalsToRender.forEach(sig => {
+        const comp = getComponentPath(sig.name);
+        if (!groups[comp]) {
+          groups[comp] = [];
+          groupOrder.push(comp);
+        }
+        groups[comp].push(sig);
+      });
+
+      // Render signal rows
+      waveContainer.innerHTML = '';
+
+      groupOrder.forEach(comp => {
+        // Render group header row
+        const headerRow = document.createElement('div');
+        headerRow.className = 'wave-group-header';
+        if (collapsedWaveGroups.has(comp)) {
+          headerRow.classList.add('collapsed');
+        }
+        headerRow.style.width = (width + 200) + 'px';
+
+        const label = document.createElement('div');
+        label.className = 'wave-group-label';
+        
+        const toggle = document.createElement('span');
+        toggle.className = 'wave-group-toggle';
+        toggle.textContent = '▼';
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = `📦 ${comp}`;
+        
+        label.appendChild(toggle);
+        label.appendChild(nameSpan);
+        headerRow.appendChild(label);
+        
+        const bar = document.createElement('div');
+        bar.className = 'wave-group-bar';
+        headerRow.appendChild(bar);
+        
+        headerRow.addEventListener('click', () => {
+          if (collapsedWaveGroups.has(comp)) {
+            collapsedWaveGroups.delete(comp);
+          } else {
+            collapsedWaveGroups.add(comp);
+          }
+          renderWaves();
+        });
+        
+        waveContainer.appendChild(headerRow);
+
+        // Render child rows if not collapsed
+        const isCollapsed = collapsedWaveGroups.has(comp);
+        if (!isCollapsed) {
+          groups[comp].forEach(sig => {
+            const row = document.createElement('div');
+            row.className = 'wave-row';
+            row.style.width = (width + 200) + 'px';
+
+            const rowLabel = document.createElement('div');
+            rowLabel.className = 'wave-row-label';
+            rowLabel.textContent = sig.name.split('.').pop(); // Show short name inside grouped list
+            rowLabel.title = sig.name;
+            row.appendChild(rowLabel);
+
+            const graphics = document.createElement('div');
+            graphics.className = 'wave-row-graphics';
+            graphics.style.width = width + 'px';
+
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', width);
+            svg.setAttribute('height', 38);
+            svg.innerHTML = drawWaveSVG(sig, width);
+            graphics.appendChild(svg);
+            row.appendChild(graphics);
+
+            waveContainer.appendChild(row);
+          });
+        }
+      });
+
+      if (signalsToRender.length === 0) {
+        waveContainer.innerHTML = '<div style="padding: 20px; text-align: center; opacity: 0.5;">Cochez des signaux dans la liste de gauche pour les afficher.</div>';
+      }
+      
+      updateCursors();
+    }
+
+    function updateCursors() {
+      const valAEl = document.getElementById('val-cursor-a');
+      const valBEl = document.getElementById('val-cursor-b');
+      const deltaEl = document.getElementById('val-delta-t');
+
+      if (cursorTimeA !== null) {
+        const leftPos = cursorTimeA * zoomX + 200;
+        cursorLineA.style.left = leftPos + 'px';
+        cursorLineA.style.display = 'block';
+        valAEl.textContent = `${cursorTimeA} ${timescale}`;
+      } else {
+        cursorLineA.style.display = 'none';
+        valAEl.textContent = `-`;
+      }
+
+      if (cursorTimeB !== null) {
+        const leftPos = cursorTimeB * zoomX + 200;
+        cursorLineB.style.left = leftPos + 'px';
+        cursorLineB.style.display = 'block';
+        valBEl.textContent = `${cursorTimeB} ${timescale}`;
+      } else {
+        cursorLineB.style.display = 'none';
+        valBEl.textContent = `-`;
+      }
+
+      if (cursorTimeA !== null && cursorTimeB !== null) {
+        const delta = Math.abs(cursorTimeB - cursorTimeA);
+        deltaEl.textContent = `${delta} ${timescale}`;
+      } else {
+        deltaEl.textContent = `-`;
+      }
+    }
+
+    // Populates Sidebar Signal List
+    function populateSidebar(signals) {
+      listContainer.innerHTML = '';
+      const filter = searchBox.value.toLowerCase();
+
+      // Group signals
+      const groups = {};
+      const groupOrder = [];
+
+      signals.forEach(sig => {
+        const comp = getComponentPath(sig.name);
+        const matchesFilter = !filter || sig.name.toLowerCase().includes(filter);
+        if (!matchesFilter) return;
+
+        if (!groups[comp]) {
+          groups[comp] = [];
+          groupOrder.push(comp);
+        }
+        groups[comp].push(sig);
+      });
+
+      // Render groups
+      groupOrder.forEach(comp => {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'sidebar-group';
+        if (collapsedSidebarGroups.has(comp)) {
+          groupDiv.classList.add('collapsed');
+        }
+
+        const header = document.createElement('div');
+        header.className = 'sidebar-group-header';
+        
+        const toggle = document.createElement('span');
+        toggle.className = 'sidebar-group-toggle';
+        toggle.textContent = '▼';
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'sidebar-group-name';
+        nameSpan.textContent = `📦 ${comp}`;
+        nameSpan.title = comp;
+
+        header.appendChild(toggle);
+        header.appendChild(nameSpan);
+        groupDiv.appendChild(header);
+
+        const content = document.createElement('div');
+        content.className = 'sidebar-group-content';
+
+        groups[comp].forEach(sig => {
+          const item = document.createElement('div');
+          item.className = 'signal-item';
+          if (visibleSignals.includes(sig.id)) {
+            item.classList.add('active');
+          }
+          
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.className = 'signal-checkbox';
+          checkbox.checked = visibleSignals.includes(sig.id);
+          
+          checkbox.addEventListener('change', () => {
+            if (checkbox.checked) {
+              if (!visibleSignals.includes(sig.id)) visibleSignals.push(sig.id);
+              item.classList.add('active');
+            } else {
+              visibleSignals = visibleSignals.filter(id => id !== sig.id);
+              item.classList.remove('active');
+            }
+            renderWaves();
+          });
+
+          const nameSpanSig = document.createElement('span');
+          nameSpanSig.className = 'signal-name';
+          nameSpanSig.textContent = sig.name.split('.').pop(); // Show short name
+          nameSpanSig.title = sig.name;
+
+          const typeSpan = document.createElement('span');
+          typeSpan.className = 'signal-type';
+          typeSpan.textContent = sig.size > 1 ? `[${sig.size}]` : sig.type;
+
+          item.appendChild(checkbox);
+          item.appendChild(nameSpanSig);
+          item.appendChild(typeSpan);
+          
+          item.addEventListener('click', (e) => {
+            if (e.target !== checkbox) {
+              checkbox.checked = !checkbox.checked;
+              checkbox.dispatchEvent(new Event('change'));
+            }
+          });
+
+          content.appendChild(item);
+        });
+
+        groupDiv.appendChild(content);
+
+        // Header click toggles collapse state
+        header.addEventListener('click', () => {
+          if (collapsedSidebarGroups.has(comp)) {
+            collapsedSidebarGroups.delete(comp);
+            groupDiv.classList.remove('collapsed');
+          } else {
+            collapsedSidebarGroups.add(comp);
+            groupDiv.classList.add('collapsed');
+          }
+        });
+
+        listContainer.appendChild(groupDiv);
+      });
+    }
+
+    // Zoom Functions
+    document.getElementById('btn-zoom-in').addEventListener('click', () => {
+      zoomX = Math.min(zoomX * 1.5, 100);
+      renderWaves();
+    });
+
+    document.getElementById('btn-zoom-out').addEventListener('click', () => {
+      zoomX = Math.max(zoomX / 1.5, 0.005);
+      renderWaves();
+    });
+
+    document.getElementById('btn-fit').addEventListener('click', () => {
+      if (!parsedVcd) return;
+      const renderW = waveViewer.clientWidth - 230;
+      zoomX = renderW / timeLimit;
+      renderWaves();
+    });
+
+    formatSelect.addEventListener('change', renderWaves);
+    searchBox.addEventListener('input', () => {
+      if (parsedVcd) populateSidebar(parsedVcd.signals);
+    });
+
+    // Tracking time cursor under mouse
+    waveViewer.addEventListener('mousemove', (e) => {
+      if (!parsedVcd) return;
+      const rect = waveViewer.getBoundingClientRect();
+      const scrollLeft = waveViewer.scrollLeft;
+      const mouseX = e.clientX - rect.left + scrollLeft;
+      
+      // Cursor offset matches the label width
+      const timelineX = mouseX - 200; 
+      if (timelineX >= 0 && timelineX <= timeLimit * zoomX) {
+        timeCursor.style.left = mouseX + 'px';
+        timeCursor.style.display = 'block';
+
+        const timeVal = Math.round(timelineX / zoomX);
+        timeTooltip.style.left = (e.clientX - rect.left + 10) + 'px';
+        timeTooltip.style.display = 'block';
+        timeTooltip.textContent = `${timeVal} ${timescale}`;
+      } else {
+        timeCursor.style.display = 'none';
+        timeTooltip.style.display = 'none';
+      }
+    });
+
+    waveViewer.addEventListener('mouseleave', () => {
+      timeCursor.style.display = 'none';
+      timeTooltip.style.display = 'none';
+    });
+
+    waveViewer.addEventListener('mousedown', (e) => {
+      if (!parsedVcd) return;
+      const rect = waveViewer.getBoundingClientRect();
+      const scrollLeft = waveViewer.scrollLeft;
+      const mouseX = e.clientX - rect.left + scrollLeft;
+      const timelineX = mouseX - 200;
+
+      if (timelineX >= 0 && timelineX <= timeLimit * zoomX) {
+        const timeVal = Math.round(timelineX / zoomX);
+        if (e.button === 0) {
+          cursorTimeA = timeVal;
+          updateCursors();
+        } else if (e.button === 2) {
+          e.preventDefault();
+          cursorTimeB = timeVal;
+          updateCursors();
+        }
+      }
+    });
+
+    waveViewer.addEventListener('contextmenu', (e) => {
+      if (!parsedVcd) return;
+      const rect = waveViewer.getBoundingClientRect();
+      const scrollLeft = waveViewer.scrollLeft;
+      const mouseX = e.clientX - rect.left + scrollLeft;
+      const timelineX = mouseX - 200;
+      if (timelineX >= 0 && timelineX <= timeLimit * zoomX) {
+        e.preventDefault();
+      }
+    });
+
+    // Preset Actions
+    document.getElementById('btn-save-preset').addEventListener('click', () => {
+      if (!parsedVcd) return;
+      const activeSignalsFullNames = parsedVcd.signals
+        .filter(s => visibleSignals.includes(s.id))
+        .map(s => s.name);
+      
+      vscode.postMessage({
+        command: 'savePreset',
+        signals: activeSignalsFullNames
+      });
+    });
+
+    document.getElementById('btn-load-preset').addEventListener('click', () => {
+      vscode.postMessage({ command: 'loadPreset' });
+    });
+
+    document.getElementById('btn-load-ref-vcd').addEventListener('click', () => {
+      vscode.postMessage({ command: 'selectReferenceVcd' });
+    });
+
+    document.getElementById('btn-clear-ref-vcd').addEventListener('click', () => {
+      referenceVcd = null;
+      referenceVcdName = "";
+      document.getElementById('btn-clear-ref-vcd').style.display = 'none';
+      document.getElementById('ref-vcd-status').style.display = 'none';
+      renderWaves();
+    });
+
+    // Message receiver
+    window.addEventListener('message', (event) => {
+      const message = event.data;
+      switch (message.command) {
+        case 'loadVcd':
+          emptyState.style.display = 'none';
+          enumMap = message.enumMap || {};
+          
+          // Clear collapsed states for new VCD
+          collapsedSidebarGroups.clear();
+          collapsedWaveGroups.clear();
+          
+          parsedVcd = parseVCD(message.vcd);
+          
+          // Read preset and filter by available signal names in VCD
+          const presetSigNames = message.preset || [];
+          visibleSignals = [];
+          
+          if (presetSigNames.length > 0) {
+            parsedVcd.signals.forEach(sig => {
+              if (presetSigNames.includes(sig.name)) {
+                visibleSignals.push(sig.id);
+              }
+            });
+          } else {
+            // By default show first 8 signals
+            visibleSignals = parsedVcd.signals.slice(0, 8).map(s => s.id);
+          }
+          
+          populateSidebar(parsedVcd.signals);
+          
+          // Auto fit
+          const renderW = waveViewer.clientWidth - 230;
+          zoomX = renderW / timeLimit;
+          if (zoomX <= 0) zoomX = 0.5;
+
+          renderWaves();
+          break;
+
+        case 'applyPreset':
+          if (!parsedVcd) return;
+          const loadedNames = message.signals || [];
+          visibleSignals = [];
+          parsedVcd.signals.forEach(sig => {
+            if (loadedNames.includes(sig.name)) {
+              visibleSignals.push(sig.id);
+            }
+          });
+          populateSidebar(parsedVcd.signals);
+          renderWaves();
+          break;
+
+        case 'loadReferenceVcd':
+          try {
+            referenceVcd = parseVCD(message.vcd);
+            referenceVcdName = message.fileName || "Référence";
+            document.getElementById('btn-clear-ref-vcd').style.display = 'inline-flex';
+            const statusEl = document.getElementById('ref-vcd-status');
+            statusEl.style.display = 'inline';
+            statusEl.textContent = `Comparé avec : ${referenceVcdName}`;
+            renderWaves();
+          } catch(e) {
+            vscode.postMessage({ command: 'showError', message: "Erreur lors du parsing du VCD de référence." });
+          }
+          break;
+      }
+    });
+
+    // Signal Webview ready
+    vscode.postMessage({ command: 'ready' });
+  </script>
+</body>
+</html>

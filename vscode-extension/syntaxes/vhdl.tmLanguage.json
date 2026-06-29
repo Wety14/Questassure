@@ -1,0 +1,87 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "VHDL",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#characters"
+    },
+    {
+      "include": "#operators"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#types"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-dash.vhdl",
+          "match": "--.*$"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.vhdl",
+          "begin": "\"",
+          "end": "\""
+        }
+      ]
+    },
+    "characters": {
+      "patterns": [
+        {
+          "name": "string.quoted.single.vhdl",
+          "match": "'[^']'"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.vhdl",
+          "match": "<=|:=|=>|=|>|<|\\+|-|\\*|/|&|\\b(?i)(and|or|not|xor|xnor|nand|nor|mod|rem)\\b"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.vhdl",
+          "match": "\\b[0-9]+(_[0-9]+)*(\\.[0-9]+(_[0-9]+)*)?([eE][+-]?[0-9]+)?\\b|\\b[0-9]+#[0-9a-fA-F]+(_[0-9a-fA-F]+)*#(\\.[0-9a-fA-F]+(_[0-9a-fA-F]+)*)?([eE][+-]?[0-9]+)?\\b|[xX]\"[0-9a-fA-F_]+\"|[bB]\"[0-1_]+\"|[oO]\"[0-7_]+\""
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.vhdl",
+          "match": "\\b(?i)(architecture|begin|block|case|component|configuration|constant|else|elsif|end|entity|for|function|generate|generic|if|in|inout|is|loop|map|of|on|others|out|package|port|process|record|return|shared|signal|then|to|type|units|use|variable|when|while|with)\\b"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "name": "storage.type.vhdl",
+          "match": "\\b(?i)(bit|bit_vector|boolean|character|integer|natural|positive|real|severity_level|string|time|delay_length|file_open_kind|file_open_status|std_logic|std_logic_vector|std_ulogic|std_ulogic_vector|signed|unsigned|line|text)\\b"
+        }
+      ]
+    }
+  },
+  "scopeName": "source.vhdl"
+}
