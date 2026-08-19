@@ -55,6 +55,135 @@ cargo install surfer
 * **Navigation dans le code** : Aller à la définition (F12), Trouver les références (Shift+F12), Structure du document.
 * **Générateurs de code** : Autocomplétion de port map, instanciation de composant (presse-papiers ou projet) et modèles de testbenches/FSM.
 
+### 4. 🤖 Serveur MCP (Model Context Protocol) pour Assistants IA
+* **Outils EDA universels pour LLMs** : Connecte les modèles d'IA (Claude, Antigravity, Cursor, Windsurf, Codex...) directement aux moteurs de simulation GHDL, de synthèse Yosys et d'ondes VCD.
+* **11 Outils MCP natifs** : Simulation de testbench, inspection d'ondes VCD, exécution de la suite de tests, analyse syntaxique GHDL, détection DRC de verrous (latches), estimation de ressources Yosys, analyse FSM & diagrammes Mermaid, génération de testbenches et formatage VHDL.
+* **Ressources & Modèles de Prompts** : Guides de conception VHDL synthétisable et workflows IA pré-configurés pour la génération de tests, le débogage de simulation et la conception de FSM.
+* **Export de configuration en 1 clic** : Exécutez la commande `Questassure : Copier la configuration MCP pour assistants IA` dans VS Code pour obtenir une configuration instantanée prête à l'emploi.
+
+---
+
+## 🤖 Guide & Architecture MCP (Model Context Protocol)
+
+### Qu'est-ce que le Model Context Protocol (MCP) ?
+Le **Model Context Protocol (MCP)** est un protocole standard ouvert conçu pour permettre aux modèles d'IA générative (LLMs) d'interagir directement et en toute sécurité avec des outils locaux, le système de fichiers et des environnements d'exécution.
+
+Plutôt que de laisser l'IA "deviner" le résultat d'une simulation VHDL ou d'un chronogramme, le serveur MCP Questassure permet à l'assistant IA de :
+1. **Compiler et exécuter** des simulations réelles avec GHDL en boucle autonome.
+2. **Inspecter les chronogrammes (VCD)** pour lire la valeur des signaux et fronts d'horloge à des instants précis.
+3. **Lancer des vérifications de règles de conception (DRC)** pour éliminer les verrous involontaires (*latches*) et les signaux manquants.
+4. **Synthétiser des circuits avec Yosys** pour évaluer la consommation en bascules D (DFF) et portes logiques.
+
+```
++-----------------------------------------------------------------------+
+|                       Clients IA / IDEs                               |
+|   Claude Desktop  |  Cursor  |  Antigravity  |  Windsurf  |  Copilot  |
++-----------------------------------------------------------------------+
+                                  | (JSON-RPC 2.0 sur stdio)
+                                  v
++-----------------------------------------------------------------------+
+|                    Serveur MCP Questassure                            |
+|                    (dist/mcp-server.js)                               |
++-----------------------------------------------------------------------+
+         |                       |                      |
+         v                       v                      v
+    Moteur GHDL            Synthèse Yosys          Ondes VCD & DRC
+(Simulation & Lint)     (Estimation Ressources)   (Inspecter & Analyser)
+```
+
+---
+
+### 📦 Configuration rapide pour les principaux services IA
+
+Vous pouvez générer automatiquement votre configuration dans VS Code en ouvrant la Palette de commandes (`Ctrl+Shift+P` / `Cmd+Shift+P`) et en choisissant :
+> **`Questassure : Copier la configuration MCP pour assistants IA (Claude, Cursor, Antigravity...)`**
+
+Vous pouvez également renseigner la configuration manuellement selon votre client préféré :
+
+#### 1. Claude Desktop
+Éditez votre fichier `claude_desktop_config.json` :
+* **macOS** : `~/Library/Application Support/Claude/claude_desktop_config.json`
+* **Windows** : `%APPDATA%\Claude\claude_desktop_config.json`
+* **Linux** : `~/.config/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "questassure": {
+      "command": "node",
+      "args": ["/CHEMIN/ABSOLU/VERS/questassure-vscode/dist/mcp-server.js"]
+    }
+  }
+}
+```
+
+#### 2. Cursor IDE
+Ajoutez dans le fichier `.cursor/mcp.json` de votre projet ou dans **Paramètres Cursor > Features > MCP** :
+```json
+{
+  "mcpServers": {
+    "questassure": {
+      "command": "node",
+      "args": ["/CHEMIN/ABSOLU/VERS/questassure-vscode/dist/mcp-server.js"]
+    }
+  }
+}
+```
+
+#### 3. Google Antigravity / Gemini Code Assist
+Ajoutez dans la configuration MCP d'Antigravity :
+```json
+{
+  "mcpServers": {
+    "questassure": {
+      "command": "node",
+      "args": ["/CHEMIN/ABSOLU/VERS/questassure-vscode/dist/mcp-server.js"]
+    }
+  }
+}
+```
+
+#### 4. Windsurf (Codeium)
+Ajoutez dans `~/.codeium/windsurf/mcp_config.json` :
+```json
+{
+  "mcpServers": {
+    "questassure": {
+      "command": "node",
+      "args": ["/CHEMIN/ABSOLU/VERS/questassure-vscode/dist/mcp-server.js"]
+    }
+  }
+}
+```
+
+#### 5. Roo Code / Cline / Autres clients MCP génériques
+```json
+{
+  "name": "questassure",
+  "command": "node",
+  "args": ["/CHEMIN/ABSOLU/VERS/questassure-vscode/dist/mcp-server.js"],
+  "transport": "stdio"
+}
+```
+
+---
+
+### 🛠️ Liste des outils MCP disponibles
+
+| Outil MCP | Description |
+| :--- | :--- |
+| `simulate_testbench` | Compile et simule un testbench avec GHDL, retourne les logs, les assertions et le chemin VCD. |
+| `inspect_waveform` | Lit un fichier `.vcd` et retourne les transitions exactes des signaux sur une fenêtre temporelle. |
+| `run_project_tests` | Découvre et exécute automatiquement tous les bancs d'essai du projet avec compte-rendu. |
+| `check_syntax_and_types` | Vérification syntaxique et sémantique en temps réel avec diagnostics GHDL ligne/colonne. |
+| `detect_hardware_hazards` | DRC Questassure : détecte les verrous (*latches*), listes de sensibilité incomplètes et code mort. |
+| `synthesize_and_estimate_resources` | Synthétise le circuit avec Yosys, estime les bascules D, LUTs et vérifie la synthétisabilité. |
+| `get_project_hierarchy` | Retourne la hiérarchie AST de toutes les entités, architectures, paquetages et bancs d'essai. |
+| `get_entity_interface` | Analyse les ports d'une entité (nom, direction, type), ses génériques et sa documentation. |
+| `analyze_fsm` | Analyse les machines à états finis, extrait les matrices de transition et génère des diagrammes Mermaid. |
+| `generate_testbench` | Génère le code complet d'un banc d'essai VHDL avec gestion d'horloge, reset et stimulus. |
+| `format_vhdl` | Formate et aligne automatiquement le code source VHDL selon les standards Questassure. |
+
 ---
 
 ## ⚙️ Paramètres

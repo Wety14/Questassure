@@ -5,7 +5,12 @@
  * des modèles de FSM, ainsi que des instanciations de composants (Port Map).
  */
 
-const vscode = require('vscode');
+let vscode;
+try {
+    vscode = require('vscode');
+} catch (e) {
+    vscode = null;
+}
 const fs = require('fs');
 const path = require('path');
 const { l } = require('./l10n');
@@ -69,28 +74,17 @@ function parseEntity(vhdlContent) {
 }
 
 /**
- * Commande VS Code : Génère un fichier de banc d'essai (testbench) VHDL pour le fichier actif.
- * Détecte les ports d'horloge et de réinitialisation pour pré-générer les stimulations de base.
+ * Génère le code VHDL complet d'un banc d'essai (testbench) à partir de la structure d'entité.
+ *
+ * @param {Object} parsed - Objet contenant { entityName, ports }.
+ * @param {Object} [options] - Options optionnelles (clockPeriod, resetActiveLow).
+ * @returns {string} Le code source VHDL du testbench.
  */
-async function generateTestbenchCommand() {
-    const activeEditor = vscode.window.activeTextEditor;
-    if (!activeEditor) {
-        vscode.window.showWarningMessage("Aucun fichier actif ouvert.");
-        return;
-    }
-
-    const doc = activeEditor.document;
-    const content = doc.getText();
-    const parsed = parseEntity(content);
-
-    if (!parsed) {
-        vscode.window.showErrorMessage("Impossible de trouver une entité VHDL valide dans ce fichier.");
-        return;
-    }
-
+function generateTestbenchContent(parsed, options = {}) {
     const { entityName, ports } = parsed;
     const tbName = `tb_${entityName}`;
-    const tbFilePath = path.join(path.dirname(doc.uri.fsPath), `${tbName}.vhdl`);
+    const clockPeriod = options.clockPeriod || '10 ns';
+    const resetActiveLow = !!options.resetActiveLow;
 
     // Détection heuristique des signaux d'horloge (clk) et de reset (rst)
     const clkPort = ports.find(p => /clk|clock/i.test(p.name));
@@ -126,9 +120,13 @@ async function generateTestbenchCommand() {
 `;
     }
 
-    let clkConst = clkPort ? `    constant clk_period : time := 10 ns;\n    signal sim_ended : boolean := false;\n` : "";
+    let clkConst = clkPort ? `    constant clk_period : time := ${clockPeriod};\n    signal sim_ended : boolean := false;\n` : "";
 
-    const tbTemplate = `library ieee;
+    const rstInit = resetActiveLow
+        ? `        ${rstName} <= '0';\n        wait for 20 ns;\n        ${rstName} <= '1';\n        wait for 40 ns;\n`
+        : `        ${rstName} <= '1';\n        wait for 20 ns;\n        ${rstName} <= '0';\n        wait for 40 ns;\n`;
+
+    return `library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
@@ -166,14 +164,14 @@ ${clkProcess}
         -- Pour chaque valeur de signal affectée, précisez la durée associée
         -- à l'aide de l'instruction 'wait for <durée>;'.
         -- Exemple :
-        --   ${rstName} <= '1';
+        --   ${rstName} <= '${resetActiveLow ? "0" : "1"}';
         --   wait for 20 ns;
-        --   ${rstName} <= '0';
+        --   ${rstName} <= '${resetActiveLow ? "1" : "0"}';
         --   wait for 100 ns;
         -- ====================================================================
 
         -- Initialisation du reset
-${rstPort ? `        ${rstName} <= '1';\n        wait for 20 ns;\n        ${rstName} <= '0';\n        wait for 40 ns;\n` : "        wait for 20 ns;\n"}
+${rstPort ? rstInit : "        wait for 20 ns;\n"}
         -- AJOUTEZ VOS TESTS ICI :
         -- Exemple d'écriture de test avec affectation et durée associée :
         -- signal_name <= '1';
@@ -184,6 +182,90 @@ ${rstPort ? `        ${rstName} <= '1';\n        wait for 20 ns;\n        ${rstN
 
 end behavior;
 `;
+}
+
+/**
+ * Génère le code VHDL d'un modèle FSM.
+ *
+ * @param {string} fsmName - Nom de l'entité FSM.
+ * @param {string[]} states - Liste des noms d'états.
+ * @returns {string} Le code source VHDL de la FSM.
+ */
+function generateFsmContent(fsmName, states) {
+    if (!states || states.length === 0) {
+        states = ['IDLE', 'STATE_1', 'STATE_2', 'DONE'];
+    }
+    return `library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity ${fsmName} is
+    port (
+        clk      : in  std_logic;
+        reset    : in  std_logic
+    );
+end ${fsmName};
+
+architecture behavior of ${fsmName} is
+
+    -- FSM State Definitions
+    type state_t is (${states.join(', ')});
+    signal state_reg, state_next : state_t;
+
+begin
+
+    -- 1. Sequential process (state registers)
+    seq_process : process(clk, reset)
+    begin
+        if reset = '1' then
+            state_reg <= ${states[0]};
+        elsif rising_edge(clk) then
+            state_reg <= state_next;
+        end if;
+    end process;
+
+    -- 2. Combinational next-state & output logic process
+    comb_process : process(state_reg)
+    begin
+        state_next <= state_reg; -- Default next state to avoid latches
+
+        case state_reg is
+${states.map(s => `            when ${s} =>
+                -- TODO: Add condition-based state transitions & outputs
+                null;`).join('\n\n')}
+            when others =>
+                state_next <= ${states[0]};
+        end case;
+    end process;
+
+end behavior;
+`;
+}
+
+/**
+ * Commande VS Code : Génère un fichier de banc d'essai (testbench) VHDL pour le fichier actif.
+ * Détecte les ports d'horloge et de réinitialisation pour pré-générer les stimulations de base.
+ */
+async function generateTestbenchCommand() {
+    if (!vscode || !vscode.window) return;
+    const activeEditor = vscode.window.activeTextEditor;
+    if (!activeEditor) {
+        vscode.window.showWarningMessage("Aucun fichier actif ouvert.");
+        return;
+    }
+
+    const doc = activeEditor.document;
+    const content = doc.getText();
+    const parsed = parseEntity(content);
+
+    if (!parsed) {
+        vscode.window.showErrorMessage("Impossible de trouver une entité VHDL valide dans ce fichier.");
+        return;
+    }
+
+    const tbName = `tb_${parsed.entityName}`;
+    const tbFilePath = path.join(path.dirname(doc.uri.fsPath), `${tbName}.vhdl`);
+    const tbTemplate = generateTestbenchContent(parsed);
 
     fs.writeFileSync(tbFilePath, tbTemplate, 'utf8');
     
@@ -787,5 +869,8 @@ function registerCodeGenerators(context) {
 }
 
 module.exports = {
-    registerCodeGenerators
+    registerCodeGenerators,
+    parseEntity,
+    generateTestbenchContent,
+    generateFsmContent
 };

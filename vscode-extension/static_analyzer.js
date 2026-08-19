@@ -5,7 +5,12 @@
  * les boucles combinatoires et les variables/signaux inutilisés (code mort).
  */
 
-const vscode = require('vscode');
+let vscode;
+try {
+    vscode = require('vscode');
+} catch (e) {
+    vscode = null;
+}
 
 /**
  * Mots-clés et types standards VHDL à ignorer lors de l'identification des signaux lus.

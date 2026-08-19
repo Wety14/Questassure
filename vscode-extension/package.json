@@ -2,7 +2,7 @@
   "name": "questassure-vscode",
   "displayName": "%displayName%",
   "description": "%description%",
-  "version": "1.0.0",
+  "version": "1.5.0",
   "publisher": "DARIER--LEGRAND",
   "license": "SEE LICENSE IN LICENSE",
   "engines": {
@@ -17,8 +17,15 @@
     "onLanguage:vhdl"
   ],
   "main": "./dist/extension.js",
+  "bin": {
+    "questassure-mcp": "./dist/mcp-server.js"
+  },
   "scripts": {
-    "vscode:prepublish": "npx esbuild extension.js --bundle --platform=node --minify --outfile=dist/extension.js --external:vscode"
+    "build": "npm run build:extension && npm run build:mcp",
+    "build:extension": "npx esbuild extension.js --bundle --platform=node --minify --outfile=dist/extension.js --external:vscode",
+    "build:mcp": "npx esbuild mcp_server.js --bundle --platform=node --minify --outfile=dist/mcp-server.js",
+    "package": "node package_vsix.js",
+    "vscode:prepublish": "npm run build"
   },
   "devDependencies": {
     "esbuild": "^0.20.0"
@@ -104,6 +111,10 @@
       {
         "command": "questassure.openFsmDesigner",
         "title": "%command.openFsmDesigner%"
+      },
+      {
+        "command": "questassure.copyMcpConfig",
+        "title": "%command.copyMcpConfig%"
       }
     ],
     "menus": {
@@ -163,6 +174,9 @@
         {
           "command": "questassure.openFsmDesigner",
           "when": "resourceLangId == vhdl"
+        },
+        {
+          "command": "questassure.copyMcpConfig"
         }
       ]
     }

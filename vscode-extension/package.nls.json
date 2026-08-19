@@ -15,5 +15,6 @@
   "command.generateFsmTemplate": "Questassure: New FSM Template",
   "command.instantiateComponent": "Questassure: Instantiate Component",
   "command.openFsmDesigner": "Questassure: Edit/View FSM",
+  "command.copyMcpConfig": "Questassure: Copy MCP Configuration for AI Assistants (Claude, Cursor, Antigravity...)",
   "config.openWavesOnTestExplorerRun.description": "Automatically open the waveform viewer when running tests from the Test Explorer."
 }

@@ -1194,6 +1194,85 @@ function activate(context) {
         });
     });
     context.subscriptions.push(showRTLCommand);
+
+    // Register MCP Configuration Command
+    registerMcpCommands(context);
+}
+
+/**
+ * Enregistre la commande permettant de générer et copier la configuration MCP
+ * pour différents clients IA (Claude Desktop, Cursor, Antigravity, Windsurf, etc.).
+ *
+ * @param {vscode.ExtensionContext} context - Le contexte de l'extension.
+ */
+function registerMcpCommands(context) {
+    const copyMcpConfigCmd = vscode.commands.registerCommand('questassure.copyMcpConfig', async () => {
+        const mcpServerPath = context.asAbsolutePath(path.join('dist', 'mcp-server.js'));
+
+        const clientChoices = [
+            {
+                label: "Claude Desktop",
+                description: "claude_desktop_config.json",
+                detail: "macOS: ~/Library/Application Support/Claude/ | Windows: %APPDATA%/Claude/",
+                type: "claude"
+            },
+            {
+                label: "Cursor",
+                description: ".cursor/mcp.json or Cursor Settings > MCP",
+                detail: "Project-level or Global Cursor MCP configuration",
+                type: "cursor"
+            },
+            {
+                label: "Antigravity / Gemini Code Assist",
+                description: "Antigravity MCP Configuration",
+                detail: "Google Antigravity MCP Server format",
+                type: "antigravity"
+            },
+            {
+                label: "Windsurf (Codeium)",
+                description: "~/.codeium/windsurf/mcp_config.json",
+                detail: "Windsurf IDE MCP Server configuration",
+                type: "windsurf"
+            },
+            {
+                label: "Generic / Other Clients",
+                description: "Standard JSON-RPC 2.0 stdio MCP configuration",
+                detail: "Compatible with Cline, Roo Code, Zed, Codex, etc.",
+                type: "generic"
+            }
+        ];
+
+        const selected = await vscode.window.showQuickPick(clientChoices, {
+            placeHolder: l('mcp.select_client')
+        });
+
+        if (!selected) return;
+
+        let configObj;
+        if (selected.type === 'claude' || selected.type === 'cursor' || selected.type === 'windsurf' || selected.type === 'antigravity') {
+            configObj = {
+                mcpServers: {
+                    questassure: {
+                        command: "node",
+                        args: [mcpServerPath]
+                    }
+                }
+            };
+        } else {
+            configObj = {
+                name: "questassure",
+                command: "node",
+                args: [mcpServerPath],
+                transport: "stdio"
+            };
+        }
+
+        const jsonString = JSON.stringify(configObj, null, 2);
+        await vscode.env.clipboard.writeText(jsonString);
+        vscode.window.showInformationMessage(l('mcp.copied', selected.label));
+    });
+
+    context.subscriptions.push(copyMcpConfigCmd);
 }
 
 /**

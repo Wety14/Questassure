@@ -3,7 +3,7 @@
 .vscode
 node_modules
 *.js
-!dist/extension.js
+!dist/**
 yarn.lock
 package-lock.json
 *.vsix

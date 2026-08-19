@@ -4,7 +4,12 @@
  * Fournit des dictionnaires anglais/français et des fonctions pour traduire les messages dynamiquement.
  */
 
-const vscode = require('vscode');
+let vscode;
+try {
+    vscode = require('vscode');
+} catch (e) {
+    vscode = null;
+}
 
 /**
  * Dictionnaire de traduction contenant les clés et leurs valeurs associées
@@ -69,7 +74,9 @@ const translations = {
         "svg.table.inputs": "Inputs",
         "svg.table.outputs": "Outputs",
         "svg.table.defaults": "Default values",
-        "svg.legend.loopback": "* Implicit loopback: If no transition condition is met, the state remains unchanged."
+        "svg.legend.loopback": "* Implicit loopback: If no transition condition is met, the state remains unchanged.",
+        "mcp.copied": "Questassure MCP configuration for {0} copied to clipboard!",
+        "mcp.select_client": "Select your AI Assistant / MCP Client to generate configuration"
     },
     fr: {
         "formatter.failed": "Le formateur Questassure a échoué : {0}",
@@ -129,7 +136,9 @@ const translations = {
         "svg.table.inputs": "Entrées",
         "svg.table.outputs": "Sorties",
         "svg.table.defaults": "Valeurs par défaut",
-        "svg.legend.loopback": "* Rebouclage implicite : Si aucune transition n'est active, l'état reste inchangé."
+        "svg.legend.loopback": "* Rebouclage implicite : Si aucune transition n'est active, l'état reste inchangé.",
+        "mcp.copied": "Configuration MCP Questassure pour {0} copiée dans le presse-papiers !",
+        "mcp.select_client": "Sélectionnez votre assistant IA / client MCP pour générer la configuration"
     }
 };
 
@@ -141,17 +150,27 @@ const translations = {
  * @returns {string} Le code de langue détecté ('en' ou 'fr').
  */
 function getLocale() {
-    const config = vscode.workspace.getConfiguration('questassure');
-    const langSetting = config.get('language') || 'auto';
-    if (langSetting === 'en') {
-        return 'en';
-    }
-    if (langSetting === 'fr') {
-        return 'fr';
-    }
-    // Langue globale de VS Code
-    const envLang = vscode.env.language || 'en';
-    if (envLang.startsWith('fr')) {
+    try {
+        if (vscode && vscode.workspace) {
+            const config = vscode.workspace.getConfiguration('questassure');
+            const langSetting = config.get('language') || 'auto';
+            if (langSetting === 'en') {
+                return 'en';
+            }
+            if (langSetting === 'fr') {
+                return 'fr';
+            }
+        }
+        if (vscode && vscode.env && vscode.env.language) {
+            const envLang = vscode.env.language;
+            if (envLang.startsWith('fr')) {
+                return 'fr';
+            }
+        }
+    } catch (e) {}
+
+    const sysLang = process.env.LANG || process.env.LC_ALL || '';
+    if (sysLang.toLowerCase().startsWith('fr')) {
         return 'fr';
     }
     return 'en';

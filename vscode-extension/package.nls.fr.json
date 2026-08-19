@@ -15,5 +15,6 @@
   "command.generateFsmTemplate": "Questassure : Nouveau modèle FSM",
   "command.instantiateComponent": "Questassure : Instancier un composant",
   "command.openFsmDesigner": "Questassure : Visualiser/Éditer FSM",
+  "command.copyMcpConfig": "Questassure : Copier la configuration MCP pour assistants IA (Claude, Cursor, Antigravity...)",
   "config.openWavesOnTestExplorerRun.description": "Ouvrir automatiquement le visualiseur de chronogramme lors de l'exécution des tests depuis l'Explorateur de tests."
 }
