@@ -2,8 +2,9 @@
   "name": "questassure-vscode",
   "displayName": "%displayName%",
   "description": "%description%",
-  "version": "1.5.0",
+  "version": "1.6.1",
   "publisher": "DARIER--LEGRAND",
+  "icon": "icon.png",
   "license": "SEE LICENSE IN LICENSE",
   "engines": {
     "vscode": "^1.60.0"
@@ -25,6 +26,7 @@
     "build:extension": "npx esbuild extension.js --bundle --platform=node --minify --outfile=dist/extension.js --external:vscode",
     "build:mcp": "npx esbuild mcp_server.js --bundle --platform=node --minify --outfile=dist/mcp-server.js",
     "package": "node package_vsix.js",
+    "publish:ovsx": "npx ovsx publish",
     "vscode:prepublish": "npm run build"
   },
   "devDependencies": {
