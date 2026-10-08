@@ -2,7 +2,7 @@
   "name": "questassure-vscode",
   "displayName": "%displayName%",
   "description": "%description%",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "publisher": "DARIER--LEGRAND",
   "icon": "icon.png",
   "license": "SEE LICENSE IN LICENSE",
