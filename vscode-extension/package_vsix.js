@@ -53,6 +53,10 @@ const vsixManifestXml = `<?xml version="1.0" encoding="utf-8"?>
 			<Property Id="Microsoft.VisualStudio.Code.ExecutesCode" Value="true" />
 			<Property Id="Microsoft.VisualStudio.Services.GitHubFlavoredMarkdown" Value="true" />
 			<Property Id="Microsoft.VisualStudio.Services.Content.Pricing" Value="Free"/>
+			<Property Id="Microsoft.VisualStudio.Services.Links.Source" Value="https://github.com/Wety14/Questassure.git" />
+			<Property Id="Microsoft.VisualStudio.Services.Links.Getstarted" Value="https://github.com/Wety14/Questassure" />
+			<Property Id="Microsoft.VisualStudio.Services.Links.GitHub" Value="https://github.com/Wety14/Questassure.git" />
+			<Property Id="Microsoft.VisualStudio.Services.Links.Support" Value="https://github.com/Wety14/Questassure/issues" />
 		</Properties>
 		<License>extension/LICENSE.txt</License>
 		<Icon>extension/icon.png</Icon>

@@ -6,6 +6,14 @@
   "publisher": "DARIER--LEGRAND",
   "icon": "icon.png",
   "license": "SEE LICENSE IN LICENSE",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Wety14/Questassure.git"
+  },
+  "homepage": "https://github.com/Wety14/Questassure#readme",
+  "bugs": {
+    "url": "https://github.com/Wety14/Questassure/issues"
+  },
   "engines": {
     "vscode": "^1.60.0"
   },
